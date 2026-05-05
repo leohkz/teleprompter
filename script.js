@@ -16,7 +16,7 @@ const I18N = {
         camErr:            '無法啟動相機，請確認授權並在 HTTPS 下運行。',
         noCamera:          '相機未就緒',
         noRecord:          '此設備不支援錄影功能',
-        prompterHint:      '請先點右上角 ⚙ 輸入提示詞…',
+        prompterHint:      '點右上角 ⚙ 輸入提示詞',
         secUnit:           '秒',
     },
     'zh-CN': {
@@ -35,7 +35,7 @@ const I18N = {
         camErr:            '无法启动摄像头，请确认授权并在 HTTPS 下运行。',
         noCamera:          '摄像头未就绪',
         noRecord:          '此设备不支持录制功能',
-        prompterHint:      '请先点右上角 ⚙ 输入提示词…',
+        prompterHint:      '点右上角 ⚙ 输入提示词',
         secUnit:           '秒',
     },
     'en': {
@@ -54,7 +54,7 @@ const I18N = {
         camErr:            'Cannot start camera. Please allow access and use HTTPS.',
         noCamera:          'Camera not ready',
         noRecord:          'Recording not supported on this device',
-        prompterHint:      'Tap ⚙ top-right to enter your script…',
+        prompterHint:      'Tap ⚙ to enter your script',
         secUnit:           's',
     }
 };
@@ -68,71 +68,67 @@ function detectLang() {
     return 'en';
 }
 let currentLang = detectLang();
-
 function t(key) { return (I18N[currentLang] || I18N['en'])[key] || key; }
 
+/* ===== DOM ===== */
+const video             = document.getElementById('cameraPreview');
+const textInput         = document.getElementById('textInput');
+const scrollingText     = document.getElementById('scrollingText');
+const fontSizeInput     = document.getElementById('fontSize');
+const fontSizeDisplay   = document.getElementById('fontSizeDisplay');
+const fontColorInput    = document.getElementById('fontColor');
+const scrollSpeedInput  = document.getElementById('scrollSpeed');
+const speedDisplay      = document.getElementById('speedDisplay');
+const wpmDisplay        = document.getElementById('wpmDisplay');
+const fsDisplay         = document.getElementById('fsDisplay');
+const estimatedTimeEl   = document.getElementById('estimatedTime');
+const textWrapper       = document.getElementById('textWrapper');
+const prompterContainer = document.getElementById('prompterContainer');
+const prompterWindow    = document.getElementById('prompterWindow');
+const dragHandle        = document.getElementById('dragHandle');
+const resizeHandle      = document.getElementById('resizeHandle');
+const countdownOverlay  = document.getElementById('countdownOverlay');
+const countdownNumber   = document.getElementById('countdownNumber');
+const countdownSlider   = document.getElementById('countdownSlider');
+const countdownDisplay  = document.getElementById('countdownDisplay');
+const downloadContainer = document.getElementById('downloadContainer');
+const downloadLink      = document.getElementById('downloadLink');
+const settingsDrawer    = document.getElementById('settingsDrawer');
+const btnOpenSettings   = document.getElementById('btnOpenSettings');
+const btnCloseSettings  = document.getElementById('btnCloseSettings');
+const btnBottomSettings = document.getElementById('btnBottomSettings');
+const btnRecord         = document.getElementById('btnRecord');
+const btnFlip           = document.getElementById('btnFlip');
+const btnMirror         = document.getElementById('btnMirror');
+const btnRotLeft        = document.getElementById('btnRotLeft');
+const btnRotRight       = document.getElementById('btnRotRight');
+const btnPortrait       = document.getElementById('btnPortrait');
+const wpmDown           = document.getElementById('wpmDown');
+const wpmUp             = document.getElementById('wpmUp');
+const fsDown            = document.getElementById('fsDown');
+const fsUp              = document.getElementById('fsUp');
+
+/* ===== i18n ===== */
 function applyI18n() {
-    // 更新所有 data-i18n 元素
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        el.textContent = t(key);
+        el.textContent = t(el.getAttribute('data-i18n'));
     });
-    // 更新 placeholder
     document.querySelectorAll('[data-i18n-ph]').forEach(el => {
         el.placeholder = t(el.getAttribute('data-i18n-ph'));
     });
-    // 語言按鈕高亮
     document.querySelectorAll('.seg-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === currentLang);
     });
-    // 提示詞浮窗佔位文字
-    if (!textInput || !textInput.value.trim()) {
-        if (scrollingText) scrollingText.innerText = t('prompterHint');
-    }
-    // 刷新時長單位
+    updatePrompterHint();
     calcEstimate();
 }
 
-/* ===== DOM ===== */
-const video              = document.getElementById('cameraPreview');
-const textInput          = document.getElementById('textInput');
-const scrollingText      = document.getElementById('scrollingText');
-const fontSizeInput      = document.getElementById('fontSize');
-const fontSizeDisplay    = document.getElementById('fontSizeDisplay');
-const fontColorInput     = document.getElementById('fontColor');
-const scrollSpeedInput   = document.getElementById('scrollSpeed');
-const speedDisplay       = document.getElementById('speedDisplay');
-const wpmDisplay         = document.getElementById('wpmDisplay');
-const fsDisplay          = document.getElementById('fsDisplay');
-const estimatedTimeEl    = document.getElementById('estimatedTime');
-const textWrapper        = document.getElementById('textWrapper');
-const prompterContainer  = document.getElementById('prompterContainer');
-const prompterWindow     = document.getElementById('prompterWindow');
-const dragHandle         = document.getElementById('dragHandle');
-const resizeHandle       = document.getElementById('resizeHandle');
-const countdownOverlay   = document.getElementById('countdownOverlay');
-const countdownNumber    = document.getElementById('countdownNumber');
-const countdownSlider    = document.getElementById('countdownSlider');
-const countdownDisplay   = document.getElementById('countdownDisplay');
-const downloadContainer  = document.getElementById('downloadContainer');
-const downloadLink       = document.getElementById('downloadLink');
-const settingsDrawer     = document.getElementById('settingsDrawer');
-const btnOpenSettings    = document.getElementById('btnOpenSettings');
-const btnCloseSettings   = document.getElementById('btnCloseSettings');
-const btnBottomSettings  = document.getElementById('btnBottomSettings');
-const btnRecord          = document.getElementById('btnRecord');
-const btnFlip            = document.getElementById('btnFlip');
-const btnMirror          = document.getElementById('btnMirror');
-const btnRotLeft         = document.getElementById('btnRotLeft');
-const btnRotRight        = document.getElementById('btnRotRight');
-const btnPortrait        = document.getElementById('btnPortrait');
-const wpmDown            = document.getElementById('wpmDown');
-const wpmUp              = document.getElementById('wpmUp');
-const fsDown             = document.getElementById('fsDown');
-const fsUp               = document.getElementById('fsUp');
+function updatePrompterHint() {
+    if (!textInput.value.trim()) {
+        scrollingText.innerText = t('prompterHint');
+    }
+}
 
-/* ===== 語言切換 ===== */
-// 必須在 DOM 獲取後再綁定事件
 document.querySelectorAll('.seg-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -177,13 +173,13 @@ const closeSettings = () => settingsDrawer.classList.remove('open');
 btnOpenSettings.addEventListener('click',   (e) => { e.stopPropagation(); openSettings(); });
 btnCloseSettings.addEventListener('click',  (e) => { e.stopPropagation(); closeSettings(); });
 btnBottomSettings.addEventListener('click', (e) => { e.stopPropagation(); openSettings(); });
-
-// 點抽屜外關閉
 window.addEventListener('pointerdown', (e) => {
     if (!settingsDrawer.classList.contains('open')) return;
     if (!settingsDrawer.contains(e.target) &&
         e.target !== btnOpenSettings &&
-        e.target !== btnBottomSettings) {
+        !btnOpenSettings.contains(e.target) &&
+        e.target !== btnBottomSettings &&
+        !btnBottomSettings.contains(e.target)) {
         closeSettings();
     }
 });
@@ -193,9 +189,9 @@ countdownSlider.addEventListener('input', () => {
     countdownDisplay.innerText = countdownSlider.value;
 });
 
-/* ===== WPM 同步 ===== */
+/* ===== WPM ===== */
 function syncWPM(val) {
-    val = Math.max(30, Math.min(400, +val));
+    val = Math.max(30, Math.min(400, Math.round(+val)));
     scrollSpeedInput.value = val;
     speedDisplay.innerText = val;
     wpmDisplay.innerText   = val;
@@ -205,9 +201,9 @@ scrollSpeedInput.addEventListener('input', () => syncWPM(scrollSpeedInput.value)
 wpmDown.addEventListener('click', () => syncWPM(+scrollSpeedInput.value - 10));
 wpmUp.addEventListener('click',   () => syncWPM(+scrollSpeedInput.value + 10));
 
-/* ===== 字體大小同步 ===== */
+/* ===== 字體大小 ===== */
 function syncFS(val) {
-    val = Math.max(16, Math.min(100, +val));
+    val = Math.max(16, Math.min(100, Math.round(+val)));
     fontSizeInput.value           = val;
     fontSizeDisplay.innerText     = val;
     fsDisplay.innerText           = val;
@@ -225,23 +221,28 @@ fontColorInput.addEventListener('input', () => {
 
 /* ===== 提示詞輸入 ===== */
 textInput.addEventListener('input', () => {
-    scrollingText.innerText = textInput.value || t('prompterHint');
+    if (textInput.value.trim()) {
+        scrollingText.innerText = textInput.value;
+    } else {
+        scrollingText.innerText = t('prompterHint');
+    }
+    resetPrompter(); // 文字改變時重置到頂部
     calcEstimate();
 });
 
-/* ===== 預計時長（WPM）===== */
+/* ===== 預計時長 ===== */
 function countUnits(text) {
     const chinese  = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
     const engWords = (text.match(/[a-zA-Z0-9]+/g) || []).length;
     return chinese + engWords;
 }
 function calcEstimate() {
-    const text = textInput ? textInput.value.trim() : '';
+    const text = textInput.value.trim();
     if (!text) { estimatedTimeEl.innerText = '0.0 ' + t('secUnit'); return; }
     const secs = (countUnits(text) / (+scrollSpeedInput.value || 120)) * 60;
     estimatedTimeEl.innerText = secs.toFixed(1) + ' ' + t('secUnit');
 }
-new ResizeObserver(calcEstimate).observe(prompterContainer);
+new ResizeObserver(() => { resetPrompter(); calcEstimate(); }).observe(prompterContainer);
 
 /* ===== 旋轉 ===== */
 let currentRotation = 0;
@@ -250,32 +251,70 @@ btnRotLeft.addEventListener('click',  () => { currentRotation = -90; applyRotati
 btnRotRight.addEventListener('click', () => { currentRotation =  90; applyRotation(); });
 btnPortrait.addEventListener('click', () => { currentRotation =   0; applyRotation(); });
 
-/* ===== 滾動（WPM → px/frame）===== */
-let scrollY = 0, isScrolling = false, animId = null;
+/* ===== 滾動逻輯 ===== */
+//
+// 計算公式：
+//   WPM = 每分鐘讀的字/詞數
+//   每秒字數 = WPM / 60
+//   每秒滾動行數 = (每秒字數) / (每行字數)
+//   每秒滾動像素 = 每秒滾動行數 * 行高(px)
+//
+function calcPxPerSecond() {
+    const wpm      = +scrollSpeedInput.value || 120;
+    const fontSize = +fontSizeInput.value    || 30;
+    // 每行字數：展示寬度 / 字寬（中文字寬約為 fontSize * 1.05）
+    const contW        = prompterContainer.clientWidth  || 300;
+    const charsPerLine = Math.max(1, Math.floor(contW / (fontSize * 1.05)));
+    // 行高
+    const lineH        = fontSize * 1.55;
+    // 每秒字數
+    const charsPerSec  = wpm / 60;
+    // 每秒滾動像素 = (charsPerSec / charsPerLine) * lineH
+    return (charsPerSec / charsPerLine) * lineH;
+}
 
-function calcPxPerFrame() {
-    const wpm   = +scrollSpeedInput.value || 120;
-    const fsize = +fontSizeInput.value    || 30;
-    const lineH = fsize * 1.55;
-    const contW = prompterContainer.clientWidth || 300;
-    const chars = Math.max(1, contW / (fsize * 0.58));
-    return (lineH / ((chars / wpm) * 60)) / 60;
+let scrollY = 0, isScrolling = false, animId = null;
+let lastTimestamp = null;
+
+/*
+ * 提示詞滾動起始位置：第一行就顯示在框內頂部
+ * top = 0 表示就定位在頂部
+ */
+function resetPrompter() {
+    isScrolling = false;
+    cancelAnimationFrame(animId);
+    scrollY = 0;
+    scrollingText.style.top = '0px';
 }
+
 function startScrolling() {
-    scrollY = prompterContainer.clientHeight;
+    // 從現有位置開始滾動（不重置位置，保留實際 top 對應的 px 値）
+    scrollY = parseFloat(scrollingText.style.top) || 0;
     isScrolling = true;
-    (function tick() {
+    lastTimestamp = null;
+
+    function tick(timestamp) {
         if (!isScrolling) return;
-        scrollY -= calcPxPerFrame();
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const delta = (timestamp - lastTimestamp) / 1000; // 秒
+        lastTimestamp = timestamp;
+
+        scrollY -= calcPxPerSecond() * delta;
         scrollingText.style.top = scrollY + 'px';
-        if (scrollY > -scrollingText.scrollHeight) animId = requestAnimationFrame(tick);
-        else stopRecording();
-    })();
+
+        if (scrollY > -scrollingText.scrollHeight) {
+            animId = requestAnimationFrame(tick);
+        } else {
+            stopRecording();
+        }
+    }
+    animId = requestAnimationFrame(tick);
 }
+
 function stopScrolling() {
     isScrolling = false;
     cancelAnimationFrame(animId);
-    scrollingText.style.top = '100%';
+    // 不重置位置，保留在停止處
 }
 
 /* ===== 錄影 ===== */
@@ -299,6 +338,7 @@ function startCountdown() {
         }
     }, 1000);
 }
+
 function startRecording() {
     if (!mediaStream) { alert(t('noCamera')); return; }
     recordedChunks = [];
@@ -309,6 +349,7 @@ function startRecording() {
             ? new MediaRecorder(mediaStream, { mimeType: mime })
             : new MediaRecorder(mediaStream);
     } catch(e) { alert(t('noRecord')); return; }
+
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
         downloadLink.href = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
@@ -322,6 +363,7 @@ function startRecording() {
     closeSettings();
     startScrolling();
 }
+
 function stopRecording() {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     isRecording = false;
@@ -329,7 +371,7 @@ function stopRecording() {
     stopScrolling();
 }
 
-/* ===== 拖拽浮窗 ===== */
+/* ===== 拖拽 ===== */
 let drag = false, dragSX, dragSY, dragL0, dragT0;
 dragHandle.addEventListener('pointerdown', (e) => {
     e.preventDefault(); dragHandle.setPointerCapture(e.pointerId);
@@ -348,7 +390,7 @@ dragHandle.addEventListener('pointermove', (e) => {
 dragHandle.addEventListener('pointerup',     () => { drag = false; });
 dragHandle.addEventListener('pointercancel', () => { drag = false; });
 
-/* ===== 縮放浮窗 ===== */
+/* ===== 縮放 ===== */
 let resize = false, resSX, resSY, resW0, resH0;
 resizeHandle.addEventListener('pointerdown', (e) => {
     e.preventDefault(); resizeHandle.setPointerCapture(e.pointerId);
@@ -377,7 +419,8 @@ function clampWindow() {
     pw.style.transform = 'none';
 }
 window.addEventListener('load',   clampWindow);
-window.addEventListener('resize', clampWindow);
+window.addEventListener('resize', () => { clampWindow(); resetPrompter(); });
 
-/* ===== 初始化 i18n（最後執行）===== */
-applyI18n();
+/* ===== 初始化 ===== */
+applyI18n();      // i18n
+resetPrompter();  // 確保提示詞酲 top:0

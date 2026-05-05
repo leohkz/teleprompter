@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Teleprompter</title>
@@ -43,7 +43,6 @@
     </div>
     <div class="drawer-body">
 
-        <!-- 語言選擇 -->
         <div class="setting-row">
             <label data-i18n="language">語言</label>
             <div class="seg-ctrl" id="langSwitcher">
@@ -53,19 +52,16 @@
             </div>
         </div>
 
-        <!-- 提示詞輸入 -->
         <div class="setting-row full">
             <label data-i18n="scriptLabel">提示詞內容</label>
             <textarea id="textInput" data-i18n-ph="scriptPlaceholder" placeholder="請輸入提示詞..."></textarea>
         </div>
 
-        <!-- 預計時長 -->
         <div class="setting-row">
             <label data-i18n="estDuration">預計時長</label>
             <strong id="estimatedTime">0.0 s</strong>
         </div>
 
-        <!-- 語速 WPM -->
         <div class="setting-row">
             <label data-i18n="wpmLabel">語速 (WPM)</label>
             <span class="val-badge" id="speedDisplay">120</span>
@@ -74,7 +70,6 @@
             <input type="range" id="scrollSpeed" min="30" max="400" value="120">
         </div>
 
-        <!-- 字體大小 -->
         <div class="setting-row">
             <label data-i18n="fontSizeLabel">字體大小</label>
             <span class="val-badge"><span id="fontSizeDisplay">30</span>px</span>
@@ -83,13 +78,11 @@
             <input type="range" id="fontSize" min="16" max="100" value="30">
         </div>
 
-        <!-- 文字顏色 -->
         <div class="setting-row">
             <label data-i18n="fontColorLabel">文字顏色</label>
             <input type="color" id="fontColor" value="#ffffff">
         </div>
 
-        <!-- 錄影倒計時 -->
         <div class="setting-row">
             <label data-i18n="countdownLabel">倒計時</label>
             <span class="val-badge"><span id="countdownDisplay">3</span>s</span>
@@ -98,7 +91,6 @@
             <input type="range" id="countdownSlider" min="0" max="10" value="3">
         </div>
 
-        <!-- 旋轉 -->
         <div class="setting-row">
             <label data-i18n="rotationLabel">旋轉方向</label>
             <div class="btn-group">
@@ -108,7 +100,6 @@
             </div>
         </div>
 
-        <!-- 下載 -->
         <div id="downloadContainer">
             <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">
                 <i data-lucide="download"></i>
@@ -119,42 +110,33 @@
     </div>
 </div>
 
-<!-- ===== 底部工具列（兩排）===== -->
+<!-- ===== 底部工具列 ===== -->
 <div id="bottomBar">
-    <!-- 上排：WPM 調節 + 錄影鍵 + 字體調節 -->
     <div class="bar-row top-row">
-        <!-- WPM 調節 -->
         <div class="mini-ctrl">
             <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
             <span class="ctrl-label">WPM<br><b id="wpmDisplay">120</b></span>
             <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
         </div>
-
-        <!-- 錄影鍵 -->
         <button id="btnRecord" class="record-btn">
             <span id="recordIcon"></span>
         </button>
-
-        <!-- 字體大小調節 -->
         <div class="mini-ctrl">
             <button class="adj-btn" id="fsDown"><i data-lucide="minus"></i></button>
             <span class="ctrl-label"><span data-i18n="fontShort">字</span><br><b id="fsDisplay">30</b>px</span>
             <button class="adj-btn" id="fsUp"><i data-lucide="plus"></i></button>
         </div>
     </div>
-
-    <!-- 下排：翻轉鏡頭 + 反鏡像 + 設定 -->
     <div class="bar-row btm-row">
-        <button id="btnFlip"          class="bar-btn">
-            <!-- camera-rotate: custom inline SVG (Lucide 沒有 camera-rotate，用 Material Symbols CDN inline SVG) -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px">
+        <button id="btnFlip" class="bar-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">
                 <path d="M20 7h-3.2L15 5H9L7.2 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="13" r="3"/>
-                <path d="M16.5 5.5 A5 5 0 0 1 20 10" stroke-dasharray="2 1.5"/>
+                <path d="M16.5 5.5 A5 5 0 0 1 20 10"/>
                 <polyline points="19 8 21 10 19 12"/>
             </svg>
         </button>
-        <button id="btnMirror"        class="bar-btn mirror-active">
+        <button id="btnMirror" class="bar-btn mirror-active">
             <i data-lucide="flip-horizontal-2"></i>
         </button>
         <button id="btnBottomSettings" class="bar-btn">
@@ -164,6 +146,16 @@
 </div>
 
 <script src="script.js"></script>
-<script>lucide.createIcons();</script>
+<script>
+    lucide.createIcons();
+    // 禁止雙擊放大
+    document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        if (now - lastTouchEnd < 350) { e.preventDefault(); }
+        lastTouchEnd = now;
+    }, { passive: false });
+</script>
 </body>
 </html>
