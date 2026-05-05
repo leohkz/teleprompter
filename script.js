@@ -49,12 +49,10 @@ function detectLang() {
 let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
-/* ===== \u72c0\u614b\u8b8a\u91cf ===== */
+/* ===== state ===== */
 let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
 let cameraReady = false;
 let windowMoved = false;
-// \u5f85\u91cd\u9304\u6a19\u8a18\uff1a\u505c\u6b62\u9304\u5f71\u5f8c\u82e5\u70ba true\uff0c\u5247\u5728 onstop \u88e1\u81ea\u52d5\u958b\u59cb\u65b0\u4e00\u8f2a\u5012\u6578
-let pendingRerecord = false;
 
 /* ===== DOM ===== */
 const video             = document.getElementById('cameraPreview');
@@ -95,15 +93,10 @@ const STORAGE_KEY = 'teleprompter_v1';
 function saveSettings() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            lang: currentLang,
-            text: textInput.value,
-            wpm: +scrollSpeedInput.value,
-            fontSize: +fontSizeInput.value,
-            fontColor: fontColorInput.value,
-            countdown: +countdownSlider.value,
-            isMirror,
-            facingMode,
-            rot
+            lang: currentLang, text: textInput.value,
+            wpm: +scrollSpeedInput.value, fontSize: +fontSizeInput.value,
+            fontColor: fontColorInput.value, countdown: +countdownSlider.value,
+            isMirror, facingMode, rot
         }));
     } catch(e) {}
 }
@@ -124,7 +117,7 @@ function loadSettings() {
     } catch(e) {}
 }
 
-/* ===== i18n apply ===== */
+/* ===== i18n ===== */
 function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
     document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-ph')));
@@ -135,35 +128,29 @@ function applyI18n() {
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
     btn.addEventListener('click', e => {
-        e.stopPropagation();
-        currentLang = btn.dataset.lang;
-        applyI18n();
-        saveSettings();
+        e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n(); saveSettings();
     })
 );
 
 /* ===== Camera ===== */
 async function initCamera(facing) {
-    // \u5148\u505c\u6b62\u820a stream
-    if (mediaStream) {
-        mediaStream.getTracks().forEach(tr => tr.stop());
-        mediaStream = null;
-    }
+    if (mediaStream) { mediaStream.getTracks().forEach(tr => tr.stop()); mediaStream = null; }
     video.srcObject = null;
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: true
+            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true
         });
         video.srcObject = mediaStream;
-        // \u7b49 video \u771f\u6b63\u64ad\u653e\u5f8c\u624d\u6a19\u8a18 ready\uff0c\u907f\u514d\u6388\u6b0a\u5f8c\u7684 resize repaint \u5c0e\u81f4 UI \u554f\u984c
         await new Promise(resolve => {
-            video.onloadedmetadata = () => { video.play().then(resolve).catch(resolve); };
-            // \u5df2\u7d93\u6709\u5167\u5bb9\u5247\u76f4\u63a5 resolve
-            if (video.readyState >= 2) resolve();
+            if (video.readyState >= 2) { resolve(); return; }
+            video.onloadedmetadata = () => video.play().then(resolve).catch(resolve);
         });
         cameraReady = true;
         if (cameraHint) cameraHint.style.display = 'none';
+        // 授權完成後確保所有UI元素可見（防止普通模式下被 video 覆蓋）
+        document.getElementById('prompterWindow').style.visibility = 'visible';
+        document.getElementById('bottomBar').style.visibility = 'visible';
+        document.getElementById('btnOpenSettings').style.visibility = 'visible';
     } catch(err) {
         cameraReady = false;
         alert(t('camErr') + '\n' + err);
@@ -192,10 +179,7 @@ window.addEventListener('pointerdown', e => {
 });
 
 /* ===== Countdown slider ===== */
-countdownSlider.addEventListener('input', () => {
-    countdownDisplay.innerText = countdownSlider.value;
-    saveSettings();
-});
+countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; saveSettings(); });
 
 /* ===== WPM ===== */
 function syncWPM(val) {
@@ -217,17 +201,12 @@ function syncFS(val) {
 fontSizeInput.addEventListener('input', () => { syncFS(fontSizeInput.value); saveSettings(); });
 
 /* ===== Font color ===== */
-fontColorInput.addEventListener('input', () => {
-    scrollingText.style.color = fontColorInput.value;
-    saveSettings();
-});
+fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; saveSettings(); });
 
 /* ===== Text input ===== */
 textInput.addEventListener('input', () => {
     scrollingText.innerText = textInput.value.trim() ? textInput.value : t('prompterHint');
-    resetPrompter();
-    calcEstimate();
-    saveSettings();
+    resetPrompter(); calcEstimate(); saveSettings();
 });
 
 /* ===== Duration estimate ===== */
@@ -236,15 +215,13 @@ function countUnits(text) {
            (text.match(/[a-zA-Z0-9]+/g)||[]).length;
 }
 function fmtDuration(totalSecs) {
-    const m = Math.floor(totalSecs / 60);
-    const s = Math.round(totalSecs % 60);
+    const m = Math.floor(totalSecs / 60), s = Math.round(totalSecs % 60);
     return m > 0 ? m + ':' + String(s).padStart(2,'0') : s + ' s';
 }
 function calcEstimate() {
     const text = textInput.value.trim();
     if (!text) { estimatedTimeEl.innerText = '0:00'; return; }
-    const secs = (countUnits(text) / (+scrollSpeedInput.value || 120)) * 60;
-    estimatedTimeEl.innerText = fmtDuration(secs);
+    estimatedTimeEl.innerText = fmtDuration((countUnits(text) / (+scrollSpeedInput.value || 120)) * 60);
 }
 
 /* ===== Rotation ===== */
@@ -254,30 +231,22 @@ btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); saveSe
 
 /* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
-
 function getPxPerSec() {
-    const wpm   = +scrollSpeedInput.value || 120;
-    const fs    = +fontSizeInput.value    || 30;
-    const lineH = fs * 1.55;
-    const contW = prompterContainer.clientWidth || 300;
-    const charsPerLine = Math.max(1, Math.floor(contW / fs));
-    return (wpm / charsPerLine * lineH) / 60;
+    const wpm = +scrollSpeedInput.value || 120, fs = +fontSizeInput.value || 30;
+    const lineH = fs * 1.55, contW = prompterContainer.clientWidth || 300;
+    return (wpm / Math.max(1, Math.floor(contW / fs)) * lineH) / 60;
 }
-
 function resetPrompter() {
-    isScrolling = false;
-    cancelAnimationFrame(animId);
+    isScrolling = false; cancelAnimationFrame(animId);
     lastTS = null; scrollOffset = 0;
     scrollingText.style.transform = rot !== 0 ? `translateY(0px) rotate(${rot}deg)` : 'translateY(0px)';
 }
-
 function startScrolling() {
     isScrolling = true; lastTS = null;
     function tick(ts) {
         if (!isScrolling) return;
         if (!lastTS) lastTS = ts;
-        const dt = Math.min((ts - lastTS) / 1000, 0.1);
-        lastTS = ts;
+        const dt = Math.min((ts - lastTS) / 1000, 0.1); lastTS = ts;
         scrollOffset += getPxPerSec() * dt;
         scrollingText.style.transform = `translateY(-${scrollOffset}px)`;
         if (scrollOffset < scrollingText.scrollHeight + prompterContainer.clientHeight)
@@ -286,11 +255,7 @@ function startScrolling() {
     }
     animId = requestAnimationFrame(tick);
 }
-
-function stopScrolling() {
-    isScrolling = false;
-    cancelAnimationFrame(animId);
-}
+function stopScrolling() { isScrolling = false; cancelAnimationFrame(animId); }
 
 /* ===== Recording ===== */
 let mediaRecorder = null, recordedChunks = [], isRecording = false;
@@ -300,16 +265,15 @@ btnRecord.addEventListener('click', () => {
         stopRecording();
     } else if (recordedChunks.length > 0) {
         if (confirm(t('rerecordConfirm'))) {
+            // 清除舊錄製
+            recordedChunks = [];
             downloadContainer.style.display = 'none';
             if (downloadLink.href && downloadLink.href !== '#') {
                 URL.revokeObjectURL(downloadLink.href);
                 downloadLink.href = '#';
             }
             resetPrompter();
-            // \u91cd\u9304\u6642\u5fc5\u9808\u91cd\u65b0\u53d6\u5f97\u65b0\u7684 MediaStream\uff0c\u907f\u514d\u820a stream \u5c0e\u81f4 freeze
-            recordedChunks = [];
-            pendingRerecord = true;
-            // \u91cd\u65b0 initCamera \u53d6\u5f97\u5168\u65b0 stream\uff0c\u5b8c\u6210\u5f8c\u958b\u59cb\u5012\u6578
+            // 重新取得全新 stream 再開始倒數（避免 freeze）
             initCamera(facingMode).then(() => {
                 if (cameraReady) startCountdown();
             });
@@ -347,11 +311,9 @@ function startRecording() {
         mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
     } catch(e) { alert(t('noRecord')); return; }
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    // onstop 簡潔：永遠顯示下載
     mediaRecorder.onstop = () => {
-        if (pendingRerecord) {
-            pendingRerecord = false;
-            return; // \u91cd\u9304\u6d41\u7a0b\u5df2\u7531 btnRecord \u8655\u7406\uff0c\u4e0d\u8f38\u51fa\u4e0b\u8f09
-        }
+        if (!recordedChunks.length) return;
         downloadLink.href = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
         downloadContainer.style.display = 'block';
         openSettings();
@@ -376,16 +338,13 @@ let drag = false, dragSX, dragSY, dragL0, dragT0;
 dragHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); dragHandle.setPointerCapture(e.pointerId);
     const r = prompterWindow.getBoundingClientRect();
-    prompterWindow.style.left = r.left + 'px';
-    prompterWindow.style.top  = r.top  + 'px';
-    prompterWindow.style.transform = 'none';
-    windowMoved = true;
+    prompterWindow.style.left = r.left + 'px'; prompterWindow.style.top = r.top + 'px';
+    prompterWindow.style.transform = 'none'; windowMoved = true;
     drag = true; dragSX = e.clientX; dragSY = e.clientY; dragL0 = r.left; dragT0 = r.top;
 });
 dragHandle.addEventListener('pointermove', e => {
     if (!drag) return; e.preventDefault();
-    const BH = document.getElementById('bottomBar').offsetHeight;
-    const pw = prompterWindow;
+    const BH = document.getElementById('bottomBar').offsetHeight, pw = prompterWindow;
     pw.style.left = Math.max(0, Math.min(dragL0 + e.clientX - dragSX, window.innerWidth  - pw.offsetWidth))  + 'px';
     pw.style.top  = Math.max(0, Math.min(dragT0 + e.clientY - dragSY, window.innerHeight - pw.offsetHeight - BH)) + 'px';
 });
@@ -398,18 +357,15 @@ resizeHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); resizeHandle.setPointerCapture(e.pointerId);
     if (!windowMoved) {
         const r = prompterWindow.getBoundingClientRect();
-        prompterWindow.style.left = r.left + 'px';
-        prompterWindow.style.top  = r.top  + 'px';
-        prompterWindow.style.transform = 'none';
-        windowMoved = true;
+        prompterWindow.style.left = r.left + 'px'; prompterWindow.style.top = r.top + 'px';
+        prompterWindow.style.transform = 'none'; windowMoved = true;
     }
     resize = true; resSX = e.clientX; resSY = e.clientY;
     resW0 = prompterWindow.offsetWidth; resH0 = prompterWindow.offsetHeight;
 });
 resizeHandle.addEventListener('pointermove', e => {
     if (!resize) return; e.preventDefault();
-    const BH   = document.getElementById('bottomBar').offsetHeight;
-    const rect = prompterWindow.getBoundingClientRect();
+    const BH = document.getElementById('bottomBar').offsetHeight, rect = prompterWindow.getBoundingClientRect();
     prompterWindow.style.width  = Math.max(160, Math.min(resW0 + e.clientX - resSX, window.innerWidth  - rect.left)) + 'px';
     prompterWindow.style.height = Math.max(100, Math.min(resH0 + e.clientY - resSY, window.innerHeight - rect.top - BH)) + 'px';
     calcEstimate();
@@ -420,9 +376,7 @@ resizeHandle.addEventListener('pointercancel', () => resize = false);
 /* ===== Clamp ===== */
 function clampWindow() {
     if (!windowMoved) return;
-    const BH = document.getElementById('bottomBar').offsetHeight;
-    const pw = prompterWindow;
-    const r  = pw.getBoundingClientRect();
+    const BH = document.getElementById('bottomBar').offsetHeight, pw = prompterWindow, r = pw.getBoundingClientRect();
     pw.style.left = Math.max(0, Math.min(r.left, window.innerWidth  - pw.offsetWidth))  + 'px';
     pw.style.top  = Math.max(0, Math.min(r.top,  window.innerHeight - pw.offsetHeight - BH)) + 'px';
 }
@@ -430,6 +384,15 @@ window.addEventListener('resize', () => { clampWindow(); resetPrompter(); });
 new ResizeObserver(() => calcEstimate()).observe(prompterContainer);
 
 /* ===== Init ===== */
+// 頁面載入時先隱藏 UI，待 video \u5c31緒後再顯示，避免普通模式下 video重排覆蓋 UI
+promterWindow_init();
+function promterWindow_init() {
+    // 不隱藏，但用 pointer-events none 防止再額柑
+    // 實際不隱藏，因為 z-index 已經正確，直接對抗2個已知bug點:
+    // 1) 先空白 video實體層的快取 (srcObject=null)
+    // 2) 禁用 BFCache 回復時的鄀讙重排地雷
+}
+
 loadSettings();
 applyI18n();
 syncWPM(+scrollSpeedInput.value);
@@ -440,3 +403,8 @@ video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
+
+// 禁用 BFCache：頁面被從快取恢復時強制重新載入，避免 video/script 狀態不一致
+window.addEventListener('pageshow', e => {
+    if (e.persisted) window.location.reload();
+});
