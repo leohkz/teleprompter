@@ -12,7 +12,7 @@ const I18N = {
         prompterHint:'點右上角 ⚙ 輸入提示詞',
         rerecordConfirm:'上一次錄製將被刪除，確定要重新錄製？',
         clearScript:'清空', clearConfirm:'確定清空提示詞？',
-        saveHintIos:'iOS：按下後在瀏覽器分享選「儲存到相片簿」',
+        saveHintIos:'iOS：按下後在瀏覽器點「分享」→「儲存到相片簿」',
         saveHintAndroid:'Android：影片已儲存至下載區，可從相簿 App 核對',
         saveHintDesktop:'影片已儲存至下載區',
     },
@@ -28,7 +28,7 @@ const I18N = {
         prompterHint:'点右上角 ⚙ 输入提示词',
         rerecordConfirm:'上次录制将被删除，确定要重新录制？',
         clearScript:'清空', clearConfirm:'确定清空提示词？',
-        saveHintIos:'iOS：按下后在浏览器分享选“保存到相册”',
+        saveHintIos:'iOS：按下后在浏览器点「分享」→「保存到相册」',
         saveHintAndroid:'Android：视频已保存至下载区，可从相册 App 查看',
         saveHintDesktop:'视频已保存至下载区',
     },
@@ -131,26 +131,49 @@ function getOS() {
     return 'desktop';
 }
 
+/* ===== 產生帶日期時間的檔名 ===== */
+function makeFilename(ext) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const date = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate());
+    const time = pad(now.getHours()) + pad(now.getMinutes());
+    return `teleprompter_${date}_${time}.${ext}`;
+}
+
+/* ===== 選擇最佳 MIME（iOS 優先 mp4） ===== */
+function getBestMime() {
+    // iOS Safari 只支援 mp4；Android/Chrome 支援 webm
+    const candidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',  // H.264 + AAC — iOS 原生播放
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+        '',
+    ];
+    for (const m of candidates) {
+        if (m === '' || MediaRecorder.isTypeSupported(m)) return m;
+    }
+    return '';
+}
+
 /* ===== 下載影片（直接觸發，不開新視窗） ===== */
-let lastBlobUrl = null;
+let lastBlobUrl  = null;
+let lastBlobMime = 'video/mp4';
 
 btnDownload.addEventListener('click', () => {
     if (!lastBlobUrl) return;
-    const os = getOS();
-    const a = document.createElement('a');
-    a.href = lastBlobUrl;
-    a.download = 'teleprompter.mp4';
+    const os  = getOS();
+    const ext = lastBlobMime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const a   = document.createElement('a');
+    a.href     = lastBlobUrl;
+    a.download = makeFilename(ext);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // 顯示儲存提示
-    if (os === 'ios') {
-        saveHint.textContent = t('saveHintIos');
-    } else if (os === 'android') {
-        saveHint.textContent = t('saveHintAndroid');
-    } else {
-        saveHint.textContent = t('saveHintDesktop');
-    }
+    if (os === 'ios')         saveHint.textContent = t('saveHintIos');
+    else if (os === 'android') saveHint.textContent = t('saveHintAndroid');
+    else                       saveHint.textContent = t('saveHintDesktop');
 });
 
 /* ===== localStorage ===== */
@@ -364,16 +387,20 @@ async function startRecording(){
     if(audioStream)tracks.push(...audioStream.getAudioTracks());
     const recStream=new MediaStream(tracks);
     recordedChunks=[];
+    const mime = getBestMime();
+    lastBlobMime = mime || 'video/mp4';
     try{
-        const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9'
-                  :MediaRecorder.isTypeSupported('video/webm')?'video/webm':'';
-        mediaRecorder=mime?new MediaRecorder(recStream,{mimeType:mime}):new MediaRecorder(recStream);
+        mediaRecorder = mime
+            ? new MediaRecorder(recStream, {mimeType: mime})
+            : new MediaRecorder(recStream);
     }catch(e){alert(t('noRecord'));return;}
     mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recordedChunks.push(e.data);};
     mediaRecorder.onstop=()=>{
         if(!recordedChunks.length)return;
         if(lastBlobUrl)URL.revokeObjectURL(lastBlobUrl);
-        lastBlobUrl=URL.createObjectURL(new Blob(recordedChunks,{type:'video/mp4'}));
+        // 以實際 mime 建立 Blob；iOS 需要 video/mp4
+        const blobType = lastBlobMime.startsWith('video/mp4') ? 'video/mp4' : lastBlobMime;
+        lastBlobUrl = URL.createObjectURL(new Blob(recordedChunks, {type: blobType}));
         saveHint.textContent = '';
         downloadContainer.style.display='block';
         openSettings();
