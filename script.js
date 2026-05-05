@@ -87,6 +87,31 @@ const btnRotRight       = document.getElementById('btnRotRight');
 const btnPortrait       = document.getElementById('btnPortrait');
 const cameraHint        = document.getElementById('cameraHint');
 const btnClearScript    = document.getElementById('btnClearScript');
+const recTimerEl        = document.getElementById('recTimer');
+const recTimerDisplay   = document.getElementById('recTimerDisplay');
+
+/* ===== 錄製計時器 ===== */
+let recTimerInterval = null;
+let recStartTime = 0;
+
+function startRecTimer() {
+    recStartTime = Date.now();
+    recTimerEl.style.display = 'flex';
+    recTimerDisplay.textContent = '00:00';
+    recTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
+        const m = Math.floor(elapsed / 60);
+        const s = elapsed % 60;
+        recTimerDisplay.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }, 500);
+}
+
+function stopRecTimer() {
+    clearInterval(recTimerInterval);
+    recTimerInterval = null;
+    recTimerEl.style.display = 'none';
+    recTimerDisplay.textContent = '00:00';
+}
 
 /* ===== localStorage ===== */
 const STORAGE_KEY='teleprompter_v2';
@@ -318,12 +343,14 @@ async function startRecording(){
     btnRecord.classList.add('recording');
     downloadContainer.style.display='none';
     closeSettings();
+    startRecTimer();
     startScrolling();
 }
 function stopRecording(){
     if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();
     isRecording=false;
     btnRecord.classList.remove('recording');
+    stopRecTimer();
     stopScrolling();
 }
 
