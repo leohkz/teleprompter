@@ -5,10 +5,8 @@ html, body {
     overflow: hidden; background: #000;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
-    color: #fff; /* 全域白色，防止繼承黑色 */
+    color: #fff;
 }
-
-/* Lucide SVG */
 svg.lucide {
     width: 20px; height: 20px;
     stroke: currentColor; fill: none;
@@ -17,7 +15,6 @@ svg.lucide {
     pointer-events: none;
 }
 
-/* ===== 鏡頭背景 ===== */
 #cameraPreview {
     position: fixed; inset: 0;
     width: 100vw; height: 100vh;
@@ -26,7 +23,6 @@ svg.lucide {
 }
 #cameraPreview.mirror-off { transform: scaleX(1); }
 
-/* ===== 倒數計時覆蓋 ===== */
 #countdownOverlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
@@ -78,20 +74,34 @@ svg.lucide {
     display: flex; align-items: center; justify-content: center;
     cursor: nwse-resize; touch-action: none; user-select: none; z-index: 10;
 }
+
+/* prompterContainer: clip 區域 */
 #prompterContainer {
     position: absolute; inset: 46px 8px 38px 8px;
     overflow: hidden; border-radius: 8px;
 }
+
+/* textWrapper: 旋轉容器，不限高度 */
 #textWrapper {
-    width: 100%; height: 100%; position: relative;
+    width: 100%;
+    position: relative;
     transition: transform .35s cubic-bezier(.4,0,.2,1);
-    transform-origin: center center;
+    transform-origin: top center;
 }
+
+/*
+ * scrollingText:
+ *   - position: relative（隨 textWrapper 自然流）
+ *   - top 由 JS 用 translateY 控制，初始 translateY(0) 即頂部
+ */
 #scrollingText {
-    position: absolute; top: 100%; left: 0; width: 100%;
+    position: relative;
+    top: 0;
+    left: 0; width: 100%;
     color: #fff; font-size: 30px; font-weight: 700;
     text-align: center; white-space: pre-wrap; line-height: 1.55;
     text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 0 6px;
+    will-change: transform;
 }
 
 /* ===== 設定抽屜 ===== */
@@ -104,19 +114,16 @@ svg.lucide {
     transition: transform .38s cubic-bezier(.4,0,.2,1);
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     overflow-y: auto; -webkit-overflow-scrolling: touch;
-    color: #fff; /* 明確白色 */
+    color: #fff;
 }
 #settingsDrawer.open { transform: translateY(0); }
-
 #drawerHeader {
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 20px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     position: sticky; top: 0; background: #111114; z-index: 1;
 }
-#drawerHeader span {
-    color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 4px;
-}
+#drawerHeader span { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 4px; }
 #btnCloseSettings {
     width: 32px; height: 32px;
     background: rgba(255,255,255,0.1);
@@ -125,99 +132,54 @@ svg.lucide {
     display: flex; align-items: center; justify-content: center; padding: 0;
 }
 #btnCloseSettings:active { background: rgba(255,255,255,0.22); }
-
-.drawer-body {
-    padding: 16px 20px 36px;
-    display: flex; flex-direction: column; gap: 14px;
-}
-
-.setting-row {
-    display: flex; align-items: center;
-    justify-content: space-between; gap: 14px;
-}
+.drawer-body { padding: 16px 20px 36px; display: flex; flex-direction: column; gap: 14px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .setting-row.full { flex-direction: column; align-items: stretch; }
 .setting-row.slider-row { padding: 0 2px; }
-
-/* 標籤文字明確白色 */
-.setting-row label {
-    color: rgba(255,255,255,0.6);
-    font-size: 14px; white-space: nowrap; flex-shrink: 0;
-}
-.val-badge {
-    color: #fff; font-size: 14px; font-weight: 600;
-    min-width: 52px; text-align: right;
-}
+.setting-row label { color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+.val-badge { color: #fff; font-size: 14px; font-weight: 600; min-width: 52px; text-align: right; }
 #estimatedTime { color: #4CD964; font-size: 15px; font-weight: 600; }
-
 textarea {
     width: 100%; height: 110px;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.18); border-radius: 12px;
-    color: #fff; font-size: 15px;
-    padding: 10px 12px; resize: none;
-    -webkit-appearance: none; outline: none; margin-top: 6px;
-    caret-color: #fff;
+    color: #fff; font-size: 15px; padding: 10px 12px; resize: none;
+    -webkit-appearance: none; outline: none; margin-top: 6px; caret-color: #fff;
 }
 textarea::placeholder { color: rgba(255,255,255,0.35); }
 textarea:focus { border-color: rgba(255,255,255,0.4); }
-
 input[type="range"] {
     width: 100%; -webkit-appearance: none;
     height: 5px; border-radius: 5px;
     background: rgba(255,255,255,0.22); outline: none; cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 26px; height: 26px; border-radius: 50%;
+    -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
     background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.45); cursor: pointer;
 }
-
-input[type="color"] {
-    width: 44px; height: 36px;
-    border: none; border-radius: 8px;
-    background: none; cursor: pointer; padding: 0;
-}
-
-/* 語言 Segment Control */
-.seg-ctrl {
-    display: flex;
-    background: rgba(255,255,255,0.08);
-    border-radius: 10px; padding: 3px; gap: 3px;
-}
+input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8px; background: none; cursor: pointer; padding: 0; }
+.seg-ctrl { display: flex; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 3px; }
 .seg-btn {
-    flex: 1; padding: 6px 12px;
-    background: transparent;
-    border: none; border-radius: 7px;
-    color: rgba(255,255,255,0.45);
-    font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all .18s;
-    white-space: nowrap;
-    -webkit-tap-highlight-color: transparent;
+    flex: 1; padding: 6px 12px; background: transparent;
+    border: none; border-radius: 7px; color: rgba(255,255,255,0.45);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s;
+    white-space: nowrap; -webkit-tap-highlight-color: transparent;
 }
-.seg-btn.active {
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-}
-
-/* 旋轉按鈕組 */
+.seg-btn.active { background: rgba(255,255,255,0.2); color: #fff; }
 .btn-group { display: flex; gap: 8px; }
 .btn-group button {
-    width: 44px; height: 40px;
-    background: rgba(255,255,255,0.1);
+    width: 44px; height: 40px; background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
     color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     -webkit-tap-highlight-color: transparent;
 }
 .btn-group button:active { background: rgba(255,255,255,0.25); }
-
-/* 下載按鈕 */
 #downloadContainer { display: none; }
 .download-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     background: linear-gradient(135deg, #34C759, #2AA348);
-    color: #fff; text-decoration: none;
-    padding: 14px; border-radius: 14px;
+    color: #fff; text-decoration: none; padding: 14px; border-radius: 14px;
     font-size: 16px; font-weight: 600;
 }
 
@@ -231,82 +193,45 @@ input[type="color"] {
     padding-bottom: env(safe-area-inset-bottom);
     display: flex; flex-direction: column; align-items: stretch;
 }
-
-.bar-row {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-}
-.top-row {
-    height: 76px;
-}
-.btm-row {
-    height: 42px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    justify-content: space-around;
-    padding: 0 10px;
-}
-
-/* WPM / 字體 微調控制 */
+.bar-row { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+.top-row { height: 76px; }
+.btm-row { height: 42px; border-top: 1px solid rgba(255,255,255,0.07); justify-content: space-around; padding: 0 10px; }
 .mini-ctrl { display: flex; align-items: center; gap: 8px; }
 .adj-btn {
     width: 34px; height: 34px;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
     color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
 .adj-btn:active { background: rgba(255,255,255,0.28); }
-.ctrl-label {
-    color: rgba(255,255,255,0.7); font-size: 11px;
-    text-align: center; line-height: 1.5; min-width: 46px;
-}
+.ctrl-label { color: rgba(255,255,255,0.7); font-size: 11px; text-align: center; line-height: 1.5; min-width: 46px; }
 .ctrl-label b { color: #fff; font-size: 13px; font-weight: 700; display: block; }
-
-/* 下排功能按鈕 */
 .bar-btn {
     height: 30px; padding: 0 14px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.18); border-radius: 15px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 15px;
     color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    font-size: 12px; font-weight: 600;
-    transition: background .15s;
-    flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
+    font-size: 12px; font-weight: 600; transition: background .15s;
+    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
 .bar-btn:active { background: rgba(255,255,255,0.28); }
-.bar-btn.mirror-active {
-    background: rgba(10,132,255,0.28);
-    border-color: rgba(10,132,255,0.6);
-    color: #4db8ff;
-}
-
-/* 錄影按鈕 */
+.bar-btn.mirror-active { background: rgba(10,132,255,0.28); border-color: rgba(10,132,255,0.6); color: #4db8ff; }
 .record-btn {
-    width: 66px; height: 66px;
-    background: #FF3B30;
+    width: 66px; height: 66px; background: #FF3B30;
     border: 4px solid rgba(255,255,255,0.9); border-radius: 50%;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: border-radius .25s cubic-bezier(.4,0,.2,1), background .2s, transform .12s;
-    flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
 .record-btn:active { transform: scale(0.9); }
-.record-btn.recording {
-    border-radius: 16px; background: #FF6B35;
-    animation: pulse 1.6s infinite;
-}
+.record-btn.recording { border-radius: 16px; background: #FF6B35; animation: pulse 1.6s infinite; }
 @keyframes pulse {
     0%,100% { box-shadow: 0 0 0 0 rgba(255,59,48,.5); }
     50%      { box-shadow: 0 0 0 14px rgba(255,59,48,0); }
 }
 #recordIcon {
-    display: block; width: 24px; height: 24px;
-    background: #fff; border-radius: 50%;
+    display: block; width: 24px; height: 24px; background: #fff; border-radius: 50%;
     transition: border-radius .25s cubic-bezier(.4,0,.2,1), width .2s, height .2s;
 }
 .record-btn.recording #recordIcon { border-radius: 4px; width: 20px; height: 20px; }
