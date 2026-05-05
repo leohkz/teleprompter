@@ -17,25 +17,30 @@
     <span id="countdownNumber">3</span>
 </div>
 
-<!-- ===== 提示詞浮窗 ===== -->
+<!-- 提示詞浮窗 -->
 <div id="prompterWindow">
+    <!-- 設定鈕：右上角浮層，不占用內部空間 -->
     <button id="btnOpenSettings" class="pwin-btn top-right">
         <i data-lucide="settings"></i>
     </button>
-    <div id="prompterContainer">
-        <div id="textWrapper">
-            <div id="scrollingText"></div>
-        </div>
-    </div>
+    <!-- 拖拽鈕：左下角浮層 -->
     <button id="dragHandle" class="pwin-btn bottom-left">
         <i data-lucide="move"></i>
     </button>
+    <!-- 縮放鈕：右下角浮層 -->
     <div id="resizeHandle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">
+            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+    </div>
+    <!-- 文字區域：充滿整個浮窗，不留任何邊距 -->
+    <div id="prompterContainer">
+        <div id="scrollingText"></div>
     </div>
 </div>
 
-<!-- ===== 設定抽屜 ===== -->
+<!-- 設定抽屜 -->
 <div id="settingsDrawer">
     <div id="drawerHeader">
         <span data-i18n="settings">設定</span>
@@ -45,7 +50,7 @@
 
         <div class="setting-row">
             <label data-i18n="language">語言</label>
-            <div class="seg-ctrl" id="langSwitcher">
+            <div class="seg-ctrl">
                 <button data-lang="zh-TW" class="seg-btn">繁體</button>
                 <button data-lang="zh-CN" class="seg-btn">简体</button>
                 <button data-lang="en"    class="seg-btn">EN</button>
@@ -53,13 +58,13 @@
         </div>
 
         <div class="setting-row full">
-            <label data-i18n="scriptLabel">提示詞內容</label>
+            <label data-i18n="scriptLabel">提示詞</label>
             <textarea id="textInput" data-i18n-ph="scriptPlaceholder" placeholder="請輸入提示詞..."></textarea>
         </div>
 
         <div class="setting-row">
             <label data-i18n="estDuration">預計時長</label>
-            <strong id="estimatedTime">0.0 s</strong>
+            <strong id="estimatedTime">0:00</strong>
         </div>
 
         <div class="setting-row">
@@ -92,11 +97,11 @@
         </div>
 
         <div class="setting-row">
-            <label data-i18n="rotationLabel">旋轉方向</label>
+            <label data-i18n="rotationLabel">旋轉</label>
             <div class="btn-group">
-                <button id="btnRotLeft"  title="左旋90°"><i data-lucide="rotate-ccw"></i></button>
-                <button id="btnPortrait" title="正常"><i data-lucide="smartphone"></i></button>
-                <button id="btnRotRight" title="右旋90°"><i data-lucide="rotate-cw"></i></button>
+                <button id="btnRotLeft"><i data-lucide="rotate-ccw"></i></button>
+                <button id="btnPortrait"><i data-lucide="smartphone"></i></button>
+                <button id="btnRotRight"><i data-lucide="rotate-cw"></i></button>
             </div>
         </div>
 
@@ -110,26 +115,33 @@
     </div>
 </div>
 
-<!-- ===== 底部工具列 ===== -->
+<!-- 底部工具列（單排） -->
 <div id="bottomBar">
-    <div class="bar-row top-row">
+    <!-- 左側：WPM + 字體 -->
+    <div class="bar-left">
         <div class="mini-ctrl">
             <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
             <span class="ctrl-label">WPM<br><b id="wpmDisplay">120</b></span>
             <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
         </div>
-        <button id="btnRecord" class="record-btn">
-            <span id="recordIcon"></span>
-        </button>
+        <div class="bar-divider"></div>
         <div class="mini-ctrl">
             <button class="adj-btn" id="fsDown"><i data-lucide="minus"></i></button>
-            <span class="ctrl-label"><span data-i18n="fontShort">字</span><br><b id="fsDisplay">30</b>px</span>
+            <span class="ctrl-label"><span data-i18n="fontShort">字</span><br><b id="fsDisplay">30</b></span>
             <button class="adj-btn" id="fsUp"><i data-lucide="plus"></i></button>
         </div>
     </div>
-    <div class="bar-row btm-row">
+
+    <!-- 中間：錄影鈕 -->
+    <button id="btnRecord" class="record-btn">
+        <span id="recordIcon"></span>
+    </button>
+
+    <!-- 右側：Flip + Mirror -->
+    <div class="bar-right">
         <button id="btnFlip" class="bar-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">
                 <path d="M20 7h-3.2L15 5H9L7.2 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="13" r="3"/>
                 <path d="M16.5 5.5 A5 5 0 0 1 20 10"/>
@@ -139,22 +151,18 @@
         <button id="btnMirror" class="bar-btn mirror-active">
             <i data-lucide="flip-horizontal-2"></i>
         </button>
-        <button id="btnBottomSettings" class="bar-btn">
-            <i data-lucide="sliders-horizontal"></i>
-        </button>
     </div>
 </div>
 
 <script src="script.js"></script>
 <script>
     lucide.createIcons();
-    // 禁止雙擊放大
-    document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(e) {
+    document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+    let _lte = 0;
+    document.addEventListener('touchend', e => {
         const now = Date.now();
-        if (now - lastTouchEnd < 350) { e.preventDefault(); }
-        lastTouchEnd = now;
+        if (now - _lte < 350) e.preventDefault();
+        _lte = now;
     }, { passive: false });
 </script>
 </body>

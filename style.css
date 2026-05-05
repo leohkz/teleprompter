@@ -1,135 +1,115 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
-    width: 100vw; height: 100vh;
-    overflow: hidden; background: #000;
+    width: 100vw; height: 100vh; overflow: hidden; background: #000;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    color: #fff;
+    -webkit-font-smoothing: antialiased; color: #fff;
 }
 svg.lucide {
-    width: 20px; height: 20px;
-    stroke: currentColor; fill: none;
+    width: 20px; height: 20px; stroke: currentColor; fill: none;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-    display: block; flex-shrink: 0;
-    pointer-events: none;
+    display: block; flex-shrink: 0; pointer-events: none;
 }
 
+/* 鏡頭 */
 #cameraPreview {
-    position: fixed; inset: 0;
-    width: 100vw; height: 100vh;
-    object-fit: cover; z-index: 1;
-    transform: scaleX(-1); transition: transform 0.2s;
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: 1; transform: scaleX(-1); transition: transform 0.2s;
 }
 #cameraPreview.mirror-off { transform: scaleX(1); }
 
+/* 倒數 */
 #countdownOverlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999; display: none;
-    justify-content: center; align-items: center;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 9999; display: none; justify-content: center; align-items: center;
 }
 #countdownOverlay.active { display: flex; }
 #countdownNumber {
-    font-size: clamp(100px, 30vw, 200px);
-    font-weight: 800; color: #fff;
-    text-shadow: 0 0 40px rgba(0,0,0,0.9);
-    animation: pop .4s ease;
+    font-size: clamp(100px,30vw,200px); font-weight: 800; color: #fff;
+    text-shadow: 0 0 40px rgba(0,0,0,0.9); animation: pop .4s ease;
 }
-@keyframes pop {
-    0%   { transform: scale(1.5); opacity: 0; }
-    100% { transform: scale(1);   opacity: 1; }
-}
+@keyframes pop { 0%{transform:scale(1.5);opacity:0} 100%{transform:scale(1);opacity:1} }
 
 /* ===== 提示詞浮窗 ===== */
 #prompterWindow {
-    position: fixed; top: 60px; left: 50%;
-    transform: translateX(-50%);
-    width: min(90vw, 420px); height: min(50vh, 320px);
-    min-width: 160px; min-height: 120px;
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    width: min(90vw,420px); height: min(50vh,320px);
+    min-width: 160px; min-height: 100px;
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.22); border-radius: 18px;
     z-index: 50; overflow: hidden; touch-action: none;
 }
+
+/* 浮層按鈕（設定 / 拖拽 / 縮放） */
 .pwin-btn {
-    position: absolute; width: 32px; height: 32px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 9px; color: #fff;
+    position: absolute; width: 28px; height: 28px; z-index: 20;
+    background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px; color: #fff;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; touch-action: none; user-select: none;
-    z-index: 10; padding: 0; transition: background .15s;
+    cursor: pointer; touch-action: none; user-select: none; padding: 0;
+    transition: background .15s;
 }
-.pwin-btn:active { background: rgba(255,255,255,0.32); }
-.top-right   { top: 7px; right: 8px; }
-.bottom-left { bottom: 7px; left: 8px; cursor: grab; }
+.pwin-btn:active { background: rgba(255,255,255,0.25); }
+.pwin-btn svg.lucide { width: 14px; height: 14px; }
+.top-right   { top: 6px; right: 6px; }
+.bottom-left { bottom: 6px; left: 6px; cursor: grab; }
 .bottom-left:active { cursor: grabbing; }
 #resizeHandle {
-    position: absolute; bottom: 0; right: 0;
-    width: 30px; height: 30px;
-    background: rgba(255,255,255,0.1);
-    border-top-left-radius: 10px; border-bottom-right-radius: 18px;
-    color: rgba(255,255,255,0.7);
+    position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; z-index: 20;
+    background: rgba(0,0,0,0.3); border-top-left-radius: 8px; border-bottom-right-radius: 18px;
+    color: rgba(255,255,255,0.6);
     display: flex; align-items: center; justify-content: center;
-    cursor: nwse-resize; touch-action: none; user-select: none; z-index: 10;
+    cursor: nwse-resize; touch-action: none; user-select: none;
 }
 
-/* prompterContainer: clip 區域 */
+/* 提示詞內容區：充滿整個浮窗，隱藏超出的部分 */
 #prompterContainer {
-    position: absolute; inset: 46px 8px 38px 8px;
-    overflow: hidden; border-radius: 8px;
+    position: absolute; inset: 0;
+    overflow: hidden; border-radius: 18px;
 }
 
-/* textWrapper: 旋轉容器，不限高度 */
-#textWrapper {
-    width: 100%;
-    position: relative;
-    transition: transform .35s cubic-bezier(.4,0,.2,1);
-    transform-origin: top center;
+/* 浮層按鈕半透明遮罩，讓頂部和底部空間可顯示文字 */
+#prompterContainer::before,
+#prompterContainer::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 36px; z-index: 15; pointer-events: none;
 }
-
-/*
- * scrollingText:
- *   - position: relative（隨 textWrapper 自然流）
- *   - top 由 JS 用 translateY 控制，初始 translateY(0) 即頂部
- */
-#scrollingText {
-    position: relative;
+#prompterContainer::before {
     top: 0;
-    left: 0; width: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+}
+#prompterContainer::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+}
+
+#scrollingText {
+    position: relative; top: 0; left: 0; width: 100%;
     color: #fff; font-size: 30px; font-weight: 700;
     text-align: center; white-space: pre-wrap; line-height: 1.55;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 0 6px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 8px 8px;
     will-change: transform;
 }
 
 /* ===== 設定抽屜 ===== */
 #settingsDrawer {
-    position: fixed; top: 0; left: 0; right: 0;
-    max-height: 84vh;
-    background: #111114;
-    border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
+    position: fixed; top: 0; left: 0; right: 0; max-height: 84vh;
+    background: #111114; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
     z-index: 200; transform: translateY(-105%);
     transition: transform .38s cubic-bezier(.4,0,.2,1);
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    color: #fff;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; color: #fff;
 }
 #settingsDrawer.open { transform: translateY(0); }
 #drawerHeader {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 20px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 18px 20px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
     position: sticky; top: 0; background: #111114; z-index: 1;
 }
 #drawerHeader span { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 4px; }
 #btnCloseSettings {
-    width: 32px; height: 32px;
-    background: rgba(255,255,255,0.1);
+    width: 32px; height: 32px; background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.15); border-radius: 50%;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; padding: 0;
+    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
 }
 #btnCloseSettings:active { background: rgba(255,255,255,0.22); }
 .drawer-body { padding: 16px 20px 36px; display: flex; flex-direction: column; gap: 14px; }
@@ -140,8 +120,7 @@ svg.lucide {
 .val-badge { color: #fff; font-size: 14px; font-weight: 600; min-width: 52px; text-align: right; }
 #estimatedTime { color: #4CD964; font-size: 15px; font-weight: 600; }
 textarea {
-    width: 100%; height: 110px;
-    background: rgba(255,255,255,0.08);
+    width: 100%; height: 110px; background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.18); border-radius: 12px;
     color: #fff; font-size: 15px; padding: 10px 12px; resize: none;
     -webkit-appearance: none; outline: none; margin-top: 6px; caret-color: #fff;
@@ -149,8 +128,7 @@ textarea {
 textarea::placeholder { color: rgba(255,255,255,0.35); }
 textarea:focus { border-color: rgba(255,255,255,0.4); }
 input[type="range"] {
-    width: 100%; -webkit-appearance: none;
-    height: 5px; border-radius: 5px;
+    width: 100%; -webkit-appearance: none; height: 5px; border-radius: 5px;
     background: rgba(255,255,255,0.22); outline: none; cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -160,78 +138,95 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8px; background: none; cursor: pointer; padding: 0; }
 .seg-ctrl { display: flex; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 3px; }
 .seg-btn {
-    flex: 1; padding: 6px 12px; background: transparent;
-    border: none; border-radius: 7px; color: rgba(255,255,255,0.45);
-    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s;
-    white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    flex: 1; padding: 6px 12px; background: transparent; border: none; border-radius: 7px;
+    color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .18s; white-space: nowrap; -webkit-tap-highlight-color: transparent;
 }
 .seg-btn.active { background: rgba(255,255,255,0.2); color: #fff; }
 .btn-group { display: flex; gap: 8px; }
 .btn-group button {
     width: 44px; height: 40px; background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    -webkit-tap-highlight-color: transparent;
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;
 }
 .btn-group button:active { background: rgba(255,255,255,0.25); }
 #downloadContainer { display: none; }
 .download-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    background: linear-gradient(135deg, #34C759, #2AA348);
+    background: linear-gradient(135deg,#34C759,#2AA348);
     color: #fff; text-decoration: none; padding: 14px; border-radius: 14px;
     font-size: 16px; font-weight: 600;
 }
 
-/* ===== 底部工具列 ===== */
+/* ===== 底部工具列（單排三等分）===== */
 #bottomBar {
-    position: fixed; bottom: 0; left: 0; right: 0;
+    position: fixed; bottom: 0; left: 0; right: 0; height: 82px;
     background: rgba(8,8,12,0.92);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.1);
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom);
-    display: flex; flex-direction: column; align-items: stretch;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding-left: 12px; padding-right: 12px;
+    gap: 0;
 }
-.bar-row { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-.top-row { height: 76px; }
-.btm-row { height: 42px; border-top: 1px solid rgba(255,255,255,0.07); justify-content: space-around; padding: 0 10px; }
-.mini-ctrl { display: flex; align-items: center; gap: 8px; }
+
+/* 左/右區塊 */
+.bar-left, .bar-right {
+    display: flex; align-items: center; gap: 6px;
+    flex: 1;
+}
+.bar-right { justify-content: flex-end; }
+
+.bar-divider {
+    width: 1px; height: 28px;
+    background: rgba(255,255,255,0.15); flex-shrink: 0;
+    margin: 0 4px;
+}
+
+/* WPM / 字體微調 */
+.mini-ctrl { display: flex; align-items: center; gap: 5px; }
 .adj-btn {
-    width: 34px; height: 34px;
+    width: 30px; height: 30px;
     background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+}
+.adj-btn svg.lucide { width: 14px; height: 14px; }
+.adj-btn:active { background: rgba(255,255,255,0.28); }
+.ctrl-label { color: rgba(255,255,255,0.65); font-size: 10px; text-align: center; line-height: 1.4; min-width: 36px; }
+.ctrl-label b { color: #fff; font-size: 12px; font-weight: 700; display: block; }
+
+/* 右側功能按鈕 */
+.bar-btn {
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
     color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    transition: background .15s; flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
 }
-.adj-btn:active { background: rgba(255,255,255,0.28); }
-.ctrl-label { color: rgba(255,255,255,0.7); font-size: 11px; text-align: center; line-height: 1.5; min-width: 46px; }
-.ctrl-label b { color: #fff; font-size: 13px; font-weight: 700; display: block; }
-.bar-btn {
-    height: 30px; padding: 0 14px;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 15px;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    font-size: 12px; font-weight: 600; transition: background .15s;
-    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
-}
+.bar-btn svg.lucide { width: 18px; height: 18px; }
 .bar-btn:active { background: rgba(255,255,255,0.28); }
-.bar-btn.mirror-active { background: rgba(10,132,255,0.28); border-color: rgba(10,132,255,0.6); color: #4db8ff; }
+.bar-btn.mirror-active { background: rgba(10,132,255,0.3); border-color: rgba(10,132,255,0.65); color: #4db8ff; }
+
+/* 錄影鈕 */
 .record-btn {
-    width: 66px; height: 66px; background: #FF3B30;
+    width: 62px; height: 62px; background: #FF3B30;
     border: 4px solid rgba(255,255,255,0.9); border-radius: 50%;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: border-radius .25s cubic-bezier(.4,0,.2,1), background .2s, transform .12s;
     flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
 .record-btn:active { transform: scale(0.9); }
-.record-btn.recording { border-radius: 16px; background: #FF6B35; animation: pulse 1.6s infinite; }
+.record-btn.recording { border-radius: 14px; background: #FF6B35; animation: pulse 1.6s infinite; }
 @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,59,48,.5); }
-    50%      { box-shadow: 0 0 0 14px rgba(255,59,48,0); }
+    0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.5)}
+    50%{box-shadow:0 0 0 12px rgba(255,59,48,0)}
 }
 #recordIcon {
-    display: block; width: 24px; height: 24px; background: #fff; border-radius: 50%;
+    display: block; width: 22px; height: 22px; background: #fff; border-radius: 50%;
     transition: border-radius .25s cubic-bezier(.4,0,.2,1), width .2s, height .2s;
 }
-.record-btn.recording #recordIcon { border-radius: 4px; width: 20px; height: 20px; }
+.record-btn.recording #recordIcon { border-radius: 4px; width: 18px; height: 18px; }
