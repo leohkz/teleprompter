@@ -1,30 +1,28 @@
 /* ===== i18n ===== */
 const I18N = {
     'zh-TW': {
-        settings:'\u8a2d  \u5b9a', language:'\u8a9e\u8a00',
-        scriptLabel:'\u63d0\u793a\u8a5e', scriptPlaceholder:'\u8acb\u5728\u6b64\u8f38\u5165\u60a8\u7684\u63d0\u793a\u8a5e...',
-        estDuration:'\u9810\u8a08\u6642\u9577', wpmLabel:'\u8a9e\u901f (WPM)',
-        fontSizeLabel:'\u5b57\u9ad4\u5927\u5c0f', fontColorLabel:'\u6587\u5b57\u984f\u8272',
-        countdownLabel:'\u5012\u8a08\u6642', rotationLabel:'\u65cb\u8f49',
-        downloadBtn:'\u4e0b\u8f09\u5f71\u7247', fontShort:'\u5b57',
-        camErr:'\u7121\u6cd5\u555f\u52d5\u76f8\u6a5f\uff0c\u8acb\u78ba\u8a8d\u6388\u6b0a\u4e26\u5728 HTTPS \u4e0b\u904b\u884c\u3002',
-        noCamera:'\u76f8\u6a5f\u672a\u5c31\u7dd2', noRecord:'\u6b64\u8a2d\u5099\u4e0d\u652f\u63f4\u9304\u5f71\u529f\u80fd',
-        prompterHint:'\u9ede\u53f3\u4e0a\u89d2 \u2699 \u8f38\u5165\u63d0\u793a\u8a5e',
-        rerecordConfirm:'\u4e0a\u4e00\u6b21\u9304\u88fd\u5c07\u88ab\u522a\u9664\uff0c\u78ba\u5b9a\u8981\u91cd\u65b0\u9304\u88fd\uff1f',
-        tapToStart:'\u9ede\u64ca\u9304\u5f71\u9215\u555f\u52d5\u76f8\u6a5f',
+        settings:'設  定', language:'語言',
+        scriptLabel:'提示詞', scriptPlaceholder:'請在此輸入您的提示詞...',
+        estDuration:'預計時長', wpmLabel:'語速 (WPM)',
+        fontSizeLabel:'字體大小', fontColorLabel:'文字顏色',
+        countdownLabel:'倒計時', rotationLabel:'旋轉',
+        downloadBtn:'下載影片', fontShort:'字',
+        camErr:'無法啟動相機，請確認授權並在 HTTPS 下運行。',
+        noCamera:'相機未就緒', noRecord:'此設備不支援錄影功能',
+        prompterHint:'點右上角 ⚙ 輸入提示詞',
+        rerecordConfirm:'上一次錄製將被刪除，確定要重新錄製？',
     },
     'zh-CN': {
-        settings:'\u8bbe  \u7f6e', language:'\u8bed\u8a00',
-        scriptLabel:'\u63d0\u793a\u8bcd', scriptPlaceholder:'\u8bf7\u5728\u6b64\u8f93\u5165\u60a8\u7684\u63d0\u793a\u8bcd...',
-        estDuration:'\u9884\u8ba1\u65f6\u957f', wpmLabel:'\u8bed\u901f (WPM)',
-        fontSizeLabel:'\u5b57\u4f53\u5927\u5c0f', fontColorLabel:'\u6587\u5b57\u989c\u8272',
-        countdownLabel:'\u5012\u8ba1\u65f6', rotationLabel:'\u65cb\u8f6c',
-        downloadBtn:'\u4e0b\u8f7d\u89c6\u9891', fontShort:'\u5b57',
-        camErr:'\u65e0\u6cd5\u542f\u52a8\u6444\u50cf\u5934\uff0c\u8bf7\u786e\u8ba4\u6388\u6743\u5e76\u5728 HTTPS \u4e0b\u8fd0\u884c\u3002',
-        noCamera:'\u6444\u50cf\u5934\u672a\u5c31\u7eea', noRecord:'\u6b64\u8bbe\u5907\u4e0d\u652f\u6301\u5f55\u5236\u529f\u80fd',
-        prompterHint:'\u70b9\u53f3\u4e0a\u89d2 \u2699 \u8f93\u5165\u63d0\u793a\u8bcd',
-        rerecordConfirm:'\u4e0a\u6b21\u5f55\u5236\u5c06\u88ab\u5220\u9664\uff0c\u786e\u5b9a\u8981\u91cd\u65b0\u5f55\u5236\uff1f',
-        tapToStart:'\u70b9\u51fb\u5f55\u5f71\u952e\u542f\u52a8\u6444\u50cf\u5934',
+        settings:'设  置', language:'语言',
+        scriptLabel:'提示词', scriptPlaceholder:'请在此输入您的提示词...',
+        estDuration:'预计时长', wpmLabel:'语速 (WPM)',
+        fontSizeLabel:'字体大小', fontColorLabel:'文字颜色',
+        countdownLabel:'倒计时', rotationLabel:'旋转',
+        downloadBtn:'下载视频', fontShort:'字',
+        camErr:'无法启动摄像头，请确认授权并在 HTTPS 下运行。',
+        noCamera:'摄像头未就绪', noRecord:'此设备不支持录制功能',
+        prompterHint:'点右上角 ⚙ 输入提示词',
+        rerecordConfirm:'上次录制将被删除，确定要重新录制？',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -35,9 +33,8 @@ const I18N = {
         downloadBtn:'Download Video', fontShort:'Sz',
         camErr:'Cannot start camera. Please allow access and use HTTPS.',
         noCamera:'Camera not ready', noRecord:'Recording not supported on this device',
-        prompterHint:'Tap \u2699 to enter your script',
+        prompterHint:'Tap ⚙ to enter your script',
         rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
-        tapToStart:'Tap record button to start camera',
     }
 };
 function detectLang() {
@@ -51,7 +48,6 @@ function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
 /* ===== state ===== */
 let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
-let cameraReady = false;
 let windowMoved = false;
 
 /* ===== DOM ===== */
@@ -88,47 +84,17 @@ const wpmDown           = document.getElementById('wpmDown');
 const wpmUp             = document.getElementById('wpmUp');
 const cameraHint        = document.getElementById('cameraHint');
 
-/* ===== localStorage ===== */
-const STORAGE_KEY = 'teleprompter_v1';
-function saveSettings() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            lang: currentLang, text: textInput.value,
-            wpm: +scrollSpeedInput.value, fontSize: +fontSizeInput.value,
-            fontColor: fontColorInput.value, countdown: +countdownSlider.value,
-            isMirror, facingMode, rot
-        }));
-    } catch(e) {}
-}
-function loadSettings() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const s = JSON.parse(raw);
-        if (s.lang) currentLang = s.lang;
-        if (typeof s.text === 'string') textInput.value = s.text;
-        if (s.wpm)  scrollSpeedInput.value = s.wpm;
-        if (s.fontSize) fontSizeInput.value = s.fontSize;
-        if (s.fontColor) fontColorInput.value = s.fontColor;
-        if (typeof s.countdown === 'number') countdownSlider.value = s.countdown;
-        if (typeof s.isMirror === 'boolean') isMirror = s.isMirror;
-        if (s.facingMode) facingMode = s.facingMode;
-        if (typeof s.rot === 'number') rot = s.rot;
-    } catch(e) {}
-}
-
 /* ===== i18n ===== */
 function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
     document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-ph')));
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     if (!textInput.value.trim()) scrollingText.innerText = t('prompterHint');
-    if (cameraHint && !cameraReady) cameraHint.innerText = t('tapToStart');
     calcEstimate();
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
     btn.addEventListener('click', e => {
-        e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n(); saveSettings();
+        e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n();
     })
 );
 
@@ -141,31 +107,19 @@ async function initCamera(facing) {
             video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true
         });
         video.srcObject = mediaStream;
-        await new Promise(resolve => {
-            if (video.readyState >= 2) { resolve(); return; }
-            video.onloadedmetadata = () => video.play().then(resolve).catch(resolve);
-        });
-        cameraReady = true;
         if (cameraHint) cameraHint.style.display = 'none';
-        // 授權完成後確保所有UI元素可見（防止普通模式下被 video 覆蓋）
-        document.getElementById('prompterWindow').style.visibility = 'visible';
-        document.getElementById('bottomBar').style.visibility = 'visible';
-        document.getElementById('btnOpenSettings').style.visibility = 'visible';
     } catch(err) {
-        cameraReady = false;
         alert(t('camErr') + '\n' + err);
     }
 }
 btnFlip.addEventListener('click', () => {
     facingMode = facingMode === 'user' ? 'environment' : 'user';
-    if (cameraReady) initCamera(facingMode);
-    saveSettings();
+    initCamera(facingMode);
 });
 btnMirror.addEventListener('click', () => {
     isMirror = !isMirror;
     video.classList.toggle('mirror-off', !isMirror);
     btnMirror.classList.toggle('mirror-active', isMirror);
-    saveSettings();
 });
 
 /* ===== Settings ===== */
@@ -179,7 +133,7 @@ window.addEventListener('pointerdown', e => {
 });
 
 /* ===== Countdown slider ===== */
-countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; saveSettings(); });
+countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; });
 
 /* ===== WPM ===== */
 function syncWPM(val) {
@@ -187,9 +141,9 @@ function syncWPM(val) {
     scrollSpeedInput.value = speedDisplay.innerText = wpmDisplay.innerText = val;
     calcEstimate();
 }
-scrollSpeedInput.addEventListener('input', () => { syncWPM(scrollSpeedInput.value); saveSettings(); });
-wpmDown.addEventListener('click', () => { syncWPM(+scrollSpeedInput.value - 10); saveSettings(); });
-wpmUp.addEventListener('click',   () => { syncWPM(+scrollSpeedInput.value + 10); saveSettings(); });
+scrollSpeedInput.addEventListener('input', () => syncWPM(scrollSpeedInput.value));
+wpmDown.addEventListener('click', () => syncWPM(+scrollSpeedInput.value - 10));
+wpmUp.addEventListener('click',   () => syncWPM(+scrollSpeedInput.value + 10));
 
 /* ===== Font size ===== */
 function syncFS(val) {
@@ -198,15 +152,15 @@ function syncFS(val) {
     scrollingText.style.fontSize = val + 'px';
     calcEstimate();
 }
-fontSizeInput.addEventListener('input', () => { syncFS(fontSizeInput.value); saveSettings(); });
+fontSizeInput.addEventListener('input', () => syncFS(fontSizeInput.value));
 
 /* ===== Font color ===== */
-fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; saveSettings(); });
+fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; });
 
 /* ===== Text input ===== */
 textInput.addEventListener('input', () => {
     scrollingText.innerText = textInput.value.trim() ? textInput.value : t('prompterHint');
-    resetPrompter(); calcEstimate(); saveSettings();
+    resetPrompter(); calcEstimate();
 });
 
 /* ===== Duration estimate ===== */
@@ -225,9 +179,9 @@ function calcEstimate() {
 }
 
 /* ===== Rotation ===== */
-btnRotLeft.addEventListener('click',  () => { rot = -90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
-btnRotRight.addEventListener('click', () => { rot =  90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
-btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); saveSettings(); });
+btnRotLeft.addEventListener('click',  () => { rot = -90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; });
+btnRotRight.addEventListener('click', () => { rot =  90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; });
+btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); });
 
 /* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
@@ -265,7 +219,6 @@ btnRecord.addEventListener('click', () => {
         stopRecording();
     } else if (recordedChunks.length > 0) {
         if (confirm(t('rerecordConfirm'))) {
-            // 清除舊錄製
             recordedChunks = [];
             downloadContainer.style.display = 'none';
             if (downloadLink.href && downloadLink.href !== '#') {
@@ -273,23 +226,12 @@ btnRecord.addEventListener('click', () => {
                 downloadLink.href = '#';
             }
             resetPrompter();
-            // 重新取得全新 stream 再開始倒數（避免 freeze）
-            initCamera(facingMode).then(() => {
-                if (cameraReady) startCountdown();
-            });
+            initCamera(facingMode).then(() => startCountdown());
         }
     } else {
-        startWithCamera();
+        startCountdown();
     }
 });
-
-async function startWithCamera() {
-    if (!cameraReady) {
-        await initCamera(facingMode);
-        if (!cameraReady) return;
-    }
-    startCountdown();
-}
 
 function startCountdown() {
     let n = +countdownSlider.value || 0;
@@ -311,7 +253,6 @@ function startRecording() {
         mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
     } catch(e) { alert(t('noRecord')); return; }
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    // onstop 簡潔：永遠顯示下載
     mediaRecorder.onstop = () => {
         if (!recordedChunks.length) return;
         downloadLink.href = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
@@ -383,28 +324,17 @@ function clampWindow() {
 window.addEventListener('resize', () => { clampWindow(); resetPrompter(); });
 new ResizeObserver(() => calcEstimate()).observe(prompterContainer);
 
-/* ===== Init ===== */
-// 頁面載入時先隱藏 UI，待 video \u5c31緒後再顯示，避免普通模式下 video重排覆蓋 UI
-promterWindow_init();
-function promterWindow_init() {
-    // 不隱藏，但用 pointer-events none 防止再額柑
-    // 實際不隱藏，因為 z-index 已經正確，直接對抗2個已知bug點:
-    // 1) 先空白 video實體層的快取 (srcObject=null)
-    // 2) 禁用 BFCache 回復時的鄀讙重排地雷
-}
+/* ===== BFCache fix ===== */
+window.addEventListener('pageshow', e => { if (e.persisted) window.location.reload(); });
 
-loadSettings();
+/* ===== Init ===== */
 applyI18n();
-syncWPM(+scrollSpeedInput.value);
-syncFS(+fontSizeInput.value);
+syncWPM(120);
+syncFS(30);
 scrollingText.style.color = fontColorInput.value;
 countdownDisplay.innerText = countdownSlider.value;
 video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
-if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-
-// 禁用 BFCache：頁面被從快取恢復時強制重新載入，避免 video/script 狀態不一致
-window.addEventListener('pageshow', e => {
-    if (e.persisted) window.location.reload();
-});
+// 頁面載入即請求相機授權
+initCamera(facingMode);
