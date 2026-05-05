@@ -11,6 +11,7 @@ const I18N = {
         noCamera:'相機未就緒', noRecord:'此設備不支援錄影功能',
         prompterHint:'點右上角 ⚙ 輸入提示詞',
         rerecordConfirm:'上一次錄製將被刪除，確定要重新錄製？',
+        tapToStart:'點擊錄影鈕開始錄製',
     },
     'zh-CN': {
         settings:'设  置', language:'语言',
@@ -23,6 +24,7 @@ const I18N = {
         noCamera:'摄像头未就绪', noRecord:'此设备不支持录制功能',
         prompterHint:'点右上角 ⚙ 输入提示词',
         rerecordConfirm:'上次录制将被删除，确定要重新录制？',
+        tapToStart:'点击录影键开始录制',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -35,6 +37,7 @@ const I18N = {
         noCamera:'Camera not ready', noRecord:'Recording not supported on this device',
         prompterHint:'Tap ⚙ to enter your script',
         rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
+        tapToStart:'Tap record to start',
     }
 };
 function detectLang() {
@@ -47,8 +50,8 @@ let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
 /* ===== state ===== */
-let videoStream = null;   // 純 video，用於 preview
-let audioStream = null;   // 純 audio，錄影前才取得
+let videoStream = null;  // video-only, for preview
+let audioStream = null;  // audio-only, for recording
 let facingMode = 'user', isMirror = true, rot = 0;
 let windowMoved = false;
 
@@ -86,6 +89,38 @@ const wpmDown           = document.getElementById('wpmDown');
 const wpmUp             = document.getElementById('wpmUp');
 const cameraHint        = document.getElementById('cameraHint');
 
+/* ===== localStorage ===== */
+const STORAGE_KEY = 'teleprompter_v1';
+function saveSettings() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            lang: currentLang,
+            text: textInput.value,
+            wpm: +scrollSpeedInput.value,
+            fontSize: +fontSizeInput.value,
+            fontColor: fontColorInput.value,
+            countdown: +countdownSlider.value,
+            isMirror, facingMode, rot
+        }));
+    } catch(e) {}
+}
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (s.lang) currentLang = s.lang;
+        if (typeof s.text === 'string') textInput.value = s.text;
+        if (s.wpm)  scrollSpeedInput.value = s.wpm;
+        if (s.fontSize) fontSizeInput.value = s.fontSize;
+        if (s.fontColor) fontColorInput.value = s.fontColor;
+        if (typeof s.countdown === 'number') countdownSlider.value = s.countdown;
+        if (typeof s.isMirror === 'boolean') isMirror = s.isMirror;
+        if (s.facingMode) facingMode = s.facingMode;
+        if (typeof s.rot === 'number') rot = s.rot;
+    } catch(e) {}
+}
+
 /* ===== i18n ===== */
 function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
@@ -96,16 +131,15 @@ function applyI18n() {
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
     btn.addEventListener('click', e => {
-        e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n();
+        e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n(); saveSettings();
     })
 );
 
-/* ===== Camera (video only, no audio) ===== */
+/* ===== Camera (video-only preview) ===== */
 async function initCamera(facing) {
     if (videoStream) { videoStream.getTracks().forEach(tr => tr.stop()); videoStream = null; }
     video.srcObject = null;
     try {
-        // 只請求 video，不請求 audio → iOS 不會顯示原生音訊按鈕
         videoStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false
@@ -117,9 +151,9 @@ async function initCamera(facing) {
     }
 }
 
-/* 錄影前才另外取得 audio stream */
+/* ===== Audio (requested once on first record) ===== */
 async function initAudio() {
-    if (audioStream) return; // 已有則不重新取得
+    if (audioStream) return;
     try {
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch(err) {
@@ -129,12 +163,13 @@ async function initAudio() {
 
 btnFlip.addEventListener('click', () => {
     facingMode = facingMode === 'user' ? 'environment' : 'user';
-    initCamera(facingMode);
+    initCamera(facingMode); saveSettings();
 });
 btnMirror.addEventListener('click', () => {
     isMirror = !isMirror;
     video.classList.toggle('mirror-off', !isMirror);
     btnMirror.classList.toggle('mirror-active', isMirror);
+    saveSettings();
 });
 
 /* ===== Settings ===== */
@@ -148,7 +183,7 @@ window.addEventListener('pointerdown', e => {
 });
 
 /* ===== Countdown slider ===== */
-countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; });
+countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; saveSettings(); });
 
 /* ===== WPM ===== */
 function syncWPM(val) {
@@ -156,9 +191,9 @@ function syncWPM(val) {
     scrollSpeedInput.value = speedDisplay.innerText = wpmDisplay.innerText = val;
     calcEstimate();
 }
-scrollSpeedInput.addEventListener('input', () => syncWPM(scrollSpeedInput.value));
-wpmDown.addEventListener('click', () => syncWPM(+scrollSpeedInput.value - 10));
-wpmUp.addEventListener('click',   () => syncWPM(+scrollSpeedInput.value + 10));
+scrollSpeedInput.addEventListener('input', () => { syncWPM(scrollSpeedInput.value); saveSettings(); });
+wpmDown.addEventListener('click', () => { syncWPM(+scrollSpeedInput.value - 10); saveSettings(); });
+wpmUp.addEventListener('click',   () => { syncWPM(+scrollSpeedInput.value + 10); saveSettings(); });
 
 /* ===== Font size ===== */
 function syncFS(val) {
@@ -167,15 +202,15 @@ function syncFS(val) {
     scrollingText.style.fontSize = val + 'px';
     calcEstimate();
 }
-fontSizeInput.addEventListener('input', () => syncFS(fontSizeInput.value));
+fontSizeInput.addEventListener('input', () => { syncFS(fontSizeInput.value); saveSettings(); });
 
 /* ===== Font color ===== */
-fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; });
+fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; saveSettings(); });
 
 /* ===== Text input ===== */
 textInput.addEventListener('input', () => {
     scrollingText.innerText = textInput.value.trim() ? textInput.value : t('prompterHint');
-    resetPrompter(); calcEstimate();
+    resetPrompter(); calcEstimate(); saveSettings();
 });
 
 /* ===== Duration estimate ===== */
@@ -194,9 +229,9 @@ function calcEstimate() {
 }
 
 /* ===== Rotation ===== */
-btnRotLeft.addEventListener('click',  () => { rot = -90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; });
-btnRotRight.addEventListener('click', () => { rot =  90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; });
-btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); });
+btnRotLeft.addEventListener('click',  () => { rot = -90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnRotRight.addEventListener('click', () => { rot =  90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); saveSettings(); });
 
 /* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
@@ -240,7 +275,7 @@ btnRecord.addEventListener('click', () => {
                 URL.revokeObjectURL(downloadLink.href);
                 downloadLink.href = '#';
             }
-            audioStream = null; // 重置 audio stream 下次錄影重新取得
+            audioStream = null;
             resetPrompter();
             initCamera(facingMode).then(() => startCountdown());
         }
@@ -262,9 +297,7 @@ function startCountdown() {
 
 async function startRecording() {
     if (!videoStream) { alert(t('noCamera')); return; }
-    // 錄影前才取得 audio
     await initAudio();
-    // 將 video + audio tracks 合並為一個轉播 stream
     const tracks = [...videoStream.getVideoTracks()];
     if (audioStream) tracks.push(...audioStream.getAudioTracks());
     const recStream = new MediaStream(tracks);
@@ -350,13 +383,20 @@ new ResizeObserver(() => calcEstimate()).observe(prompterContainer);
 window.addEventListener('pageshow', e => { if (e.persisted) window.location.reload(); });
 
 /* ===== Init ===== */
+loadSettings();
 applyI18n();
-syncWPM(120);
-syncFS(30);
+syncWPM(+scrollSpeedInput.value);
+syncFS(+fontSizeInput.value);
 scrollingText.style.color = fontColorInput.value;
 countdownDisplay.innerText = countdownSlider.value;
 video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
+if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-// 頁面載入即開啟純 video stream（不包含 audio）
-initCamera(facingMode);
+// 頁面載入即同時請求相機 + 麥克風（只需授權一次，之後自動通過）
+Promise.all([
+    initCamera(facingMode),
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then(s => { audioStream = s; })
+        .catch(err => console.warn('Audio permission:', err))
+]);
