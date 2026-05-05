@@ -5,150 +5,165 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>提示詞器</title>
-    <!-- Lucide Icons (MIT) -->
+    <title>Teleprompter</title>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <video id="cameraPreview" autoplay playsinline muted></video>
+<video id="cameraPreview" autoplay playsinline muted></video>
 
-    <div id="countdownOverlay">
-        <span id="countdownNumber">3</span>
+<div id="countdownOverlay">
+    <span id="countdownNumber">3</span>
+</div>
+
+<!-- ===== 提示詞浮窗 ===== -->
+<div id="prompterWindow">
+    <button id="btnOpenSettings" class="pwin-btn top-right">
+        <i data-lucide="settings"></i>
+    </button>
+    <div id="prompterContainer">
+        <div id="textWrapper">
+            <div id="scrollingText"></div>
+        </div>
     </div>
+    <button id="dragHandle" class="pwin-btn bottom-left">
+        <i data-lucide="move"></i>
+    </button>
+    <div id="resizeHandle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </div>
+</div>
 
-    <!-- ===== 提示詞浮窗 ===== -->
-    <div id="prompterWindow">
+<!-- ===== 設定抽屜 ===== -->
+<div id="settingsDrawer">
+    <div id="drawerHeader">
+        <span data-i18n="settings">設定</span>
+        <button id="btnCloseSettings"><i data-lucide="x"></i></button>
+    </div>
+    <div class="drawer-body">
 
-        <!-- 右上：設定 -->
-        <button id="btnOpenSettings" class="pwin-btn top-right" title="設定">
-            <i data-lucide="settings"></i>
+        <!-- 語言選擇 -->
+        <div class="setting-row">
+            <label data-i18n="language">語言</label>
+            <div class="seg-ctrl" id="langSwitcher">
+                <button data-lang="zh-TW" class="seg-btn">繁體</button>
+                <button data-lang="zh-CN" class="seg-btn">简体</button>
+                <button data-lang="en"    class="seg-btn">EN</button>
+            </div>
+        </div>
+
+        <!-- 提示詞輸入 -->
+        <div class="setting-row full">
+            <label data-i18n="scriptLabel">提示詞內容</label>
+            <textarea id="textInput" data-i18n-ph="scriptPlaceholder" placeholder="請輸入提示詞..."></textarea>
+        </div>
+
+        <!-- 預計時長 -->
+        <div class="setting-row">
+            <label data-i18n="estDuration">預計時長</label>
+            <strong id="estimatedTime">0.0 s</strong>
+        </div>
+
+        <!-- 語速 WPM -->
+        <div class="setting-row">
+            <label data-i18n="wpmLabel">語速 (WPM)</label>
+            <span class="val-badge" id="speedDisplay">120</span>
+        </div>
+        <div class="setting-row slider-row">
+            <input type="range" id="scrollSpeed" min="30" max="400" value="120">
+        </div>
+
+        <!-- 字體大小 -->
+        <div class="setting-row">
+            <label data-i18n="fontSizeLabel">字體大小</label>
+            <span class="val-badge"><span id="fontSizeDisplay">30</span>px</span>
+        </div>
+        <div class="setting-row slider-row">
+            <input type="range" id="fontSize" min="16" max="100" value="30">
+        </div>
+
+        <!-- 文字顏色 -->
+        <div class="setting-row">
+            <label data-i18n="fontColorLabel">文字顏色</label>
+            <input type="color" id="fontColor" value="#ffffff">
+        </div>
+
+        <!-- 錄影倒計時 -->
+        <div class="setting-row">
+            <label data-i18n="countdownLabel">倒計時</label>
+            <span class="val-badge"><span id="countdownDisplay">3</span>s</span>
+        </div>
+        <div class="setting-row slider-row">
+            <input type="range" id="countdownSlider" min="0" max="10" value="3">
+        </div>
+
+        <!-- 旋轉 -->
+        <div class="setting-row">
+            <label data-i18n="rotationLabel">旋轉方向</label>
+            <div class="btn-group">
+                <button id="btnRotLeft"  title="左旋90°"><i data-lucide="rotate-ccw"></i></button>
+                <button id="btnPortrait" title="正常"><i data-lucide="smartphone"></i></button>
+                <button id="btnRotRight" title="右旋90°"><i data-lucide="rotate-cw"></i></button>
+            </div>
+        </div>
+
+        <!-- 下載 -->
+        <div id="downloadContainer">
+            <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">
+                <i data-lucide="download"></i>
+                <span data-i18n="downloadBtn">下載影片</span>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== 底部工具列（兩排）===== -->
+<div id="bottomBar">
+    <!-- 上排：WPM 調節 + 錄影鍵 + 字體調節 -->
+    <div class="bar-row top-row">
+        <!-- WPM 調節 -->
+        <div class="mini-ctrl">
+            <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
+            <span class="ctrl-label">WPM<br><b id="wpmDisplay">120</b></span>
+            <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
+        </div>
+
+        <!-- 錄影鍵 -->
+        <button id="btnRecord" class="record-btn">
+            <span id="recordIcon"></span>
         </button>
 
-        <!-- 文字區 -->
-        <div id="prompterContainer">
-            <div id="textWrapper">
-                <div id="scrollingText">請先點右上角「⚙」輸入提示詞…</div>
-            </div>
+        <!-- 字體大小調節 -->
+        <div class="mini-ctrl">
+            <button class="adj-btn" id="fsDown"><i data-lucide="minus"></i></button>
+            <span class="ctrl-label"><span data-i18n="fontShort">字</span><br><b id="fsDisplay">30</b>px</span>
+            <button class="adj-btn" id="fsUp"><i data-lucide="plus"></i></button>
         </div>
+    </div>
 
-        <!-- 左下：拖拽 -->
-        <button id="dragHandle" class="pwin-btn bottom-left" title="拖拽移動">
-            <i data-lucide="move"></i>
+    <!-- 下排：翻轉鏡頭 + 反鏡像 + 設定 -->
+    <div class="bar-row btm-row">
+        <button id="btnFlip"          class="bar-btn">
+            <!-- camera-rotate: custom inline SVG (Lucide 沒有 camera-rotate，用 Material Symbols CDN inline SVG) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px">
+                <path d="M20 7h-3.2L15 5H9L7.2 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="13" r="3"/>
+                <path d="M16.5 5.5 A5 5 0 0 1 20 10" stroke-dasharray="2 1.5"/>
+                <polyline points="19 8 21 10 19 12"/>
+            </svg>
         </button>
-
-        <!-- 右下：縮放 -->
-        <div id="resizeHandle">
-            <i data-lucide="chevrons-right-left" style="transform:rotate(45deg)"></i>
-        </div>
+        <button id="btnMirror"        class="bar-btn mirror-active">
+            <i data-lucide="flip-horizontal-2"></i>
+        </button>
+        <button id="btnBottomSettings" class="bar-btn">
+            <i data-lucide="sliders-horizontal"></i>
+        </button>
     </div>
+</div>
 
-    <!-- ===== 設定抽屜 ===== -->
-    <div id="settingsDrawer">
-        <div id="drawerHeader">
-            <span>設　定</span>
-            <button id="btnCloseSettings">
-                <i data-lucide="x"></i>
-            </button>
-        </div>
-
-        <div class="drawer-body">
-
-            <div class="setting-row full">
-                <label>提示詞內容</label>
-                <textarea id="textInput" placeholder="請在此輸入您的提示詞..."></textarea>
-            </div>
-
-            <div class="setting-row">
-                <label>預計影片時長</label>
-                <strong id="estimatedTime">0.0 秒</strong>
-            </div>
-
-            <div class="setting-row">
-                <label>WPM 語速 &nbsp;<span id="speedDisplay">120</span></label>
-                <input type="range" id="scrollSpeed" min="30" max="400" value="120">
-            </div>
-
-            <div class="setting-row">
-                <label>字體大小 &nbsp;<span id="fontSizeDisplay">30</span>px</label>
-                <input type="range" id="fontSize" min="16" max="100" value="30">
-            </div>
-
-            <div class="setting-row">
-                <label>文字顏色</label>
-                <input type="color" id="fontColor" value="#ffffff">
-            </div>
-
-            <div class="setting-row">
-                <label>錄影倒計時（秒）</label>
-                <input type="number" id="countdownTime" value="3" min="0" max="10">
-            </div>
-
-            <div class="setting-row">
-                <label>提示器旋轉</label>
-                <div class="btn-group">
-                    <button id="btnRotLeft" title="左旋90度">
-                        <i data-lucide="rotate-ccw"></i>
-                    </button>
-                    <button id="btnPortrait" title="正常方向">
-                        <i data-lucide="smartphone"></i>
-                    </button>
-                    <button id="btnRotRight" title="右旋90度">
-                        <i data-lucide="rotate-cw"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div id="downloadContainer">
-                <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">
-                    <i data-lucide="download"></i>&nbsp;下載影片
-                </a>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- ===== 底部工具列 ===== -->
-    <div id="bottomBar">
-
-        <!-- 左：WPM 調節 -->
-        <div class="bar-side">
-            <div class="mini-control">
-                <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
-                <span class="ctrl-label">WPM<br><span id="wpmDisplay">120</span></span>
-                <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
-            </div>
-        </div>
-
-        <!-- 中央 -->
-        <div class="bar-center">
-            <button id="btnFlip" class="bar-btn" title="切換鏡頭">
-                <i data-lucide="camera"></i>
-                <i data-lucide="refresh-cw" class="icon-sm"></i>
-            </button>
-
-            <button id="btnRecord" class="record-btn">
-                <span id="recordIcon"></span>
-            </button>
-
-            <button id="btnMirror" class="bar-btn mirror-active" title="反鏡像">
-                <i data-lucide="flip-horizontal-2"></i>
-            </button>
-        </div>
-
-        <!-- 右：字體大小調節 -->
-        <div class="bar-side">
-            <div class="mini-control">
-                <button class="adj-btn" id="fsDown"><i data-lucide="minus"></i></button>
-                <span class="ctrl-label">字體<br><span id="fsDisplay">30</span>px</span>
-                <button class="adj-btn" id="fsUp"><i data-lucide="plus"></i></button>
-            </div>
-        </div>
-
-    </div>
-
-    <script src="script.js"></script>
-    <script>lucide.createIcons();</script>
+<script src="script.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
