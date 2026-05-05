@@ -46,6 +46,9 @@ function detectLang() {
 let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
+/* ===== 狀態變量（必須在 loadSettings 之前宣告） ===== */
+let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
+
 /* ===== DOM ===== */
 const video             = document.getElementById('cameraPreview');
 const textInput         = document.getElementById('textInput');
@@ -103,9 +106,9 @@ function loadSettings() {
         const s = JSON.parse(raw);
         if (s.lang) currentLang = s.lang;
         if (typeof s.text === 'string') textInput.value = s.text;
-        if (s.wpm)  { scrollSpeedInput.value = s.wpm; }
-        if (s.fontSize) { fontSizeInput.value = s.fontSize; }
-        if (s.fontColor) { fontColorInput.value = s.fontColor; }
+        if (s.wpm)  scrollSpeedInput.value = s.wpm;
+        if (s.fontSize) fontSizeInput.value = s.fontSize;
+        if (s.fontColor) fontColorInput.value = s.fontColor;
         if (typeof s.countdown === 'number') countdownSlider.value = s.countdown;
         if (typeof s.isMirror === 'boolean') isMirror = s.isMirror;
         if (s.facingMode) facingMode = s.facingMode;
@@ -131,7 +134,6 @@ document.querySelectorAll('.seg-btn').forEach(btn =>
 );
 
 /* ===== Camera ===== */
-let mediaStream = null, facingMode = 'user', isMirror = true;
 async function initCamera(facing) {
     if (mediaStream) mediaStream.getTracks().forEach(tr => tr.stop());
     try {
@@ -220,7 +222,6 @@ function calcEstimate() {
 }
 
 /* ===== Rotation ===== */
-let rot = 0;
 btnRotLeft.addEventListener('click',  () => { rot=-90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
 btnRotRight.addEventListener('click', () => { rot= 90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
 btnPortrait.addEventListener('click', () => { rot=  0; resetPrompter(); saveSettings(); });
@@ -241,7 +242,7 @@ function resetPrompter() {
     isScrolling = false;
     cancelAnimationFrame(animId);
     lastTS = null; scrollOffset = 0;
-    scrollingText.style.transform = 'translateY(0px)';
+    scrollingText.style.transform = rot !== 0 ? `translateY(0px) rotate(${rot}deg)` : 'translateY(0px)';
 }
 
 function startScrolling() {
@@ -372,7 +373,6 @@ new ResizeObserver(()=>calcEstimate()).observe(prompterContainer);
 /* ===== Init ===== */
 loadSettings();
 applyI18n();
-// 套用讀取回來的數值到畫面
 syncWPM(+scrollSpeedInput.value);
 syncFS(+fontSizeInput.value);
 scrollingText.style.color = fontColorInput.value;
