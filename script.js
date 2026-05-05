@@ -12,6 +12,9 @@ const I18N = {
         prompterHint:'點右上角 ⚙ 輸入提示詞',
         rerecordConfirm:'上一次錄製將被刪除，確定要重新錄製？',
         clearScript:'清空', clearConfirm:'確定清空提示詞？',
+        saveHintIos:'iOS：按下後在瀏覽器分享選「儲存到相片簿」',
+        saveHintAndroid:'Android：影片已儲存至下載區，可從相簿 App 核對',
+        saveHintDesktop:'影片已儲存至下載區',
     },
     'zh-CN': {
         settings:'设  置', language:'语言',
@@ -25,6 +28,9 @@ const I18N = {
         prompterHint:'点右上角 ⚙ 输入提示词',
         rerecordConfirm:'上次录制将被删除，确定要重新录制？',
         clearScript:'清空', clearConfirm:'确定清空提示词？',
+        saveHintIos:'iOS：按下后在浏览器分享选“保存到相册”',
+        saveHintAndroid:'Android：视频已保存至下载区，可从相册 App 查看',
+        saveHintDesktop:'视频已保存至下载区',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -38,6 +44,9 @@ const I18N = {
         prompterHint:'Tap \u2699 to enter your script',
         rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
         clearScript:'Clear', clearConfirm:'Clear the script?',
+        saveHintIos:'iOS: Tap Share in browser → "Save to Photos"',
+        saveHintAndroid:'Android: Video saved to Downloads. Check your Gallery app.',
+        saveHintDesktop:'Video saved to Downloads folder.',
     }
 };
 function detectLang() {
@@ -61,10 +70,10 @@ const scrollingText     = document.getElementById('scrollingText');
 const fontSizeInput     = document.getElementById('fontSize');
 const fontSizeDisplay   = document.getElementById('fontSizeDisplay');
 const fontColorInput    = document.getElementById('fontColor');
-const scrollSpeedInput  = document.getElementById('scrollSpeed');        // wpmBar slider
-const scrollSpeedDrawer = document.getElementById('scrollSpeedDrawer');  // drawer slider
-const wpmDisplay        = document.getElementById('wpmDisplay');          // wpmBar label
-const speedDisplay      = document.getElementById('speedDisplay');        // drawer label
+const scrollSpeedInput  = document.getElementById('scrollSpeed');
+const scrollSpeedDrawer = document.getElementById('scrollSpeedDrawer');
+const wpmDisplay        = document.getElementById('wpmDisplay');
+const speedDisplay      = document.getElementById('speedDisplay');
 const estimatedTimeEl   = document.getElementById('estimatedTime');
 const prompterContainer = document.getElementById('prompterContainer');
 const prompterWindow    = document.getElementById('prompterWindow');
@@ -75,7 +84,8 @@ const countdownNumber   = document.getElementById('countdownNumber');
 const countdownSlider   = document.getElementById('countdownSlider');
 const countdownDisplay  = document.getElementById('countdownDisplay');
 const downloadContainer = document.getElementById('downloadContainer');
-const downloadLink      = document.getElementById('downloadLink');
+const btnDownload       = document.getElementById('btnDownload');
+const saveHint          = document.getElementById('saveHint');
 const settingsDrawer    = document.getElementById('settingsDrawer');
 const btnOpenSettings   = document.getElementById('btnOpenSettings');
 const btnCloseSettings  = document.getElementById('btnCloseSettings');
@@ -112,6 +122,36 @@ function stopRecTimer() {
     recTimerEl.style.display = 'none';
     recTimerDisplay.textContent = '00:00';
 }
+
+/* ===== 偵測平台 ===== */
+function getOS() {
+    const ua = navigator.userAgent || '';
+    if (/iP(hone|ad|od)/i.test(ua)) return 'ios';
+    if (/android/i.test(ua)) return 'android';
+    return 'desktop';
+}
+
+/* ===== 下載影片（直接觸發，不開新視窗） ===== */
+let lastBlobUrl = null;
+
+btnDownload.addEventListener('click', () => {
+    if (!lastBlobUrl) return;
+    const os = getOS();
+    const a = document.createElement('a');
+    a.href = lastBlobUrl;
+    a.download = 'teleprompter.mp4';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // 顯示儲存提示
+    if (os === 'ios') {
+        saveHint.textContent = t('saveHintIos');
+    } else if (os === 'android') {
+        saveHint.textContent = t('saveHintAndroid');
+    } else {
+        saveHint.textContent = t('saveHintDesktop');
+    }
+});
 
 /* ===== localStorage ===== */
 const STORAGE_KEY='teleprompter_v2';
@@ -295,7 +335,7 @@ function startScrolling(){
 function stopScrolling(){isScrolling=false;cancelAnimationFrame(animId);}
 
 /* ===== Recording ===== */
-let mediaRecorder=null,recordedChunks=[],isRecording=false,lastBlobUrl=null;
+let mediaRecorder=null,recordedChunks=[],isRecording=false;
 btnRecord.addEventListener('click',()=>{
     if(isRecording){stopRecording();}
     else if(recordedChunks.length>0){
@@ -334,7 +374,7 @@ async function startRecording(){
         if(!recordedChunks.length)return;
         if(lastBlobUrl)URL.revokeObjectURL(lastBlobUrl);
         lastBlobUrl=URL.createObjectURL(new Blob(recordedChunks,{type:'video/mp4'}));
-        downloadLink.href=lastBlobUrl;
+        saveHint.textContent = '';
         downloadContainer.style.display='block';
         openSettings();
     };

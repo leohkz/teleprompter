@@ -18,7 +18,7 @@
     <span id="countdownNumber">3</span>
 </div>
 
-<!-- 錄製計時器 -->
+<!-- 錄製計時器（右下角） -->
 <div id="recTimer" style="display:none;">
     <span class="rec-dot"></span>
     <span id="recTimerDisplay">00:00</span>
@@ -46,12 +46,10 @@
 <!-- WPM 滑桿浮層 -->
 <div id="wpmBar">
     <span class="speed-label slow-label">慢</span>
-
     <div class="wpm-slider-wrap">
         <input type="range" id="scrollSpeed" min="30" max="400" value="120">
         <span class="wpm-val" id="wpmDisplay">120 WPM</span>
     </div>
-
     <span class="speed-label fast-label">快</span>
 </div>
 
@@ -85,7 +83,6 @@
             <strong id="estimatedTime">0:00</strong>
         </div>
 
-        <!-- WPM 在設置頁也保留 -->
         <div class="setting-row">
             <label data-i18n="wpmLabel">語速 (WPM)</label>
             <span class="val-badge"><span id="speedDisplay">120</span> WPM</span>
@@ -125,11 +122,11 @@
         </div>
 
         <div id="downloadContainer">
-            <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4"
-               onclick="if(this.href!='#'){window.open(this.href,'_blank');return false;}">
+            <button id="btnDownload" class="download-btn">
                 <i data-lucide="download"></i>
                 <span data-i18n="downloadBtn">下載影片</span>
-            </a>
+            </button>
+            <p class="save-hint" id="saveHint"></p>
         </div>
 
     </div>
