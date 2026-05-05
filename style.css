@@ -10,14 +10,21 @@ svg.lucide {
     display: block; flex-shrink: 0; pointer-events: none;
 }
 
-/* 鏡頭 */
+/* z-index 層次表:
+   1   = 鏡頭 video
+   50  = 提示詞浮窗
+   100 = 底部工具列
+   200 = 設定抽屜
+   9999 = 倒數覆蓋
+*/
+
 #cameraPreview {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
-    object-fit: cover; z-index: 1; transform: scaleX(-1); transition: transform 0.2s;
+    object-fit: cover; z-index: 1;
+    transform: scaleX(-1); transition: transform 0.2s;
 }
 #cameraPreview.mirror-off { transform: scaleX(1); }
 
-/* 倒數 */
 #countdownOverlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6);
     z-index: 9999; display: none; justify-content: center; align-items: center;
@@ -37,13 +44,12 @@ svg.lucide {
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.22); border-radius: 18px;
-    z-index: 50; overflow: hidden; touch-action: none;
+    z-index: 50;          /* 高於鏡頭 */
+    overflow: hidden; touch-action: none;
 }
-
-/* 浮層按鈕（設定 / 拖拽 / 縮放） */
 .pwin-btn {
-    position: absolute; width: 28px; height: 28px; z-index: 20;
-    background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.2);
+    position: absolute; width: 28px; height: 28px; z-index: 60;
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.22);
     border-radius: 8px; color: #fff;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; touch-action: none; user-select: none; padding: 0;
@@ -55,46 +61,39 @@ svg.lucide {
 .bottom-left { bottom: 6px; left: 6px; cursor: grab; }
 .bottom-left:active { cursor: grabbing; }
 #resizeHandle {
-    position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; z-index: 20;
-    background: rgba(0,0,0,0.3); border-top-left-radius: 8px; border-bottom-right-radius: 18px;
-    color: rgba(255,255,255,0.6);
+    position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; z-index: 60;
+    background: rgba(0,0,0,0.35); border-top-left-radius: 8px; border-bottom-right-radius: 18px;
+    color: rgba(255,255,255,0.65);
     display: flex; align-items: center; justify-content: center;
     cursor: nwse-resize; touch-action: none; user-select: none;
 }
-
-/* 提示詞內容區：充滿整個浮窗，隱藏超出的部分 */
 #prompterContainer {
     position: absolute; inset: 0;
     overflow: hidden; border-radius: 18px;
+    z-index: 51;          /* 高於浮窗本身，確保文字可見 */
 }
-
-/* 浮層按鈕半透明遮罩，讓頂部和底部空間可顯示文字 */
 #prompterContainer::before,
 #prompterContainer::after {
-    content: ''; position: absolute; left: 0; right: 0; height: 36px; z-index: 15; pointer-events: none;
+    content:''; position:absolute; left:0; right:0; height:36px; z-index:15; pointer-events:none;
 }
-#prompterContainer::before {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
-}
-#prompterContainer::after {
-    bottom: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
-}
+#prompterContainer::before { top:0; background:linear-gradient(to bottom,rgba(0,0,0,0.4),transparent); }
+#prompterContainer::after  { bottom:0; background:linear-gradient(to top,rgba(0,0,0,0.4),transparent); }
 
 #scrollingText {
     position: relative; top: 0; left: 0; width: 100%;
     color: #fff; font-size: 30px; font-weight: 700;
     text-align: center; white-space: pre-wrap; line-height: 1.55;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 8px 8px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 8px;
     will-change: transform;
 }
 
 /* ===== 設定抽屜 ===== */
 #settingsDrawer {
     position: fixed; top: 0; left: 0; right: 0; max-height: 84vh;
-    background: #111114; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
-    z-index: 200; transform: translateY(-105%);
+    background: #111114;
+    border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
+    z-index: 200;         /* 最高層（除倒數）*/
+    transform: translateY(-105%);
     transition: transform .38s cubic-bezier(.4,0,.2,1);
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     overflow-y: auto; -webkit-overflow-scrolling: touch; color: #fff;
@@ -103,13 +102,14 @@ svg.lucide {
 #drawerHeader {
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 20px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
-    position: sticky; top: 0; background: #111114; z-index: 1;
+    position: sticky; top: 0; background: #111114; z-index: 201;
 }
 #drawerHeader span { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 4px; }
 #btnCloseSettings {
     width: 32px; height: 32px; background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.15); border-radius: 50%;
-    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+    color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
 }
 #btnCloseSettings:active { background: rgba(255,255,255,0.22); }
 .drawer-body { padding: 16px 20px 36px; display: flex; flex-direction: column; gap: 14px; }
@@ -158,66 +158,57 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
     font-size: 16px; font-weight: 600;
 }
 
-/* ===== 底部工具列（單排三等分）===== */
+/* ===== 底部工具列 ===== */
 #bottomBar {
-    position: fixed; bottom: 0; left: 0; right: 0; height: 82px;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 82px;
     background: rgba(8,8,12,0.92);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.1);
-    z-index: 100;
+    z-index: 100;         /* 高於提示詞浮窗，低於設定抽屜 */
+    padding: 0 16px;
     padding-bottom: env(safe-area-inset-bottom);
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding-left: 12px; padding-right: 12px;
-    gap: 0;
+    display: flex; align-items: center; justify-content: space-between;
 }
 
-/* 左/右區塊 */
-.bar-left, .bar-right {
+/* 左側：上下排 WPM + 字體 */
+.bar-left {
+    display: flex; flex-direction: column;
+    gap: 4px; flex: 1;
+    align-items: flex-start;
+}
+
+/* 每一行: [-] 標籤 [+] */
+.mini-ctrl {
     display: flex; align-items: center; gap: 6px;
-    flex: 1;
 }
-.bar-right { justify-content: flex-end; }
-
-.bar-divider {
-    width: 1px; height: 28px;
-    background: rgba(255,255,255,0.15); flex-shrink: 0;
-    margin: 0 4px;
-}
-
-/* WPM / 字體微調 */
-.mini-ctrl { display: flex; align-items: center; gap: 5px; }
 .adj-btn {
-    width: 30px; height: 30px;
-    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+    width: 26px; height: 26px;
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
     color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
-.adj-btn svg.lucide { width: 14px; height: 14px; }
-.adj-btn:active { background: rgba(255,255,255,0.28); }
-.ctrl-label { color: rgba(255,255,255,0.65); font-size: 10px; text-align: center; line-height: 1.4; min-width: 36px; }
-.ctrl-label b { color: #fff; font-size: 12px; font-weight: 700; display: block; }
+.adj-btn svg.lucide { width: 12px; height: 12px; }
+.adj-btn:active { background: rgba(255,255,255,0.3); }
 
-/* 右側功能按鈕 */
-.bar-btn {
-    width: 38px; height: 38px;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .15s; flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
+/* 標籤文字 */
+.ctrl-label {
+    color: rgba(255,255,255,0.55); font-size: 10px;
+    min-width: 20px; text-align: left;
 }
-.bar-btn svg.lucide { width: 18px; height: 18px; }
-.bar-btn:active { background: rgba(255,255,255,0.28); }
-.bar-btn.mirror-active { background: rgba(10,132,255,0.3); border-color: rgba(10,132,255,0.65); color: #4db8ff; }
+.ctrl-label b {
+    color: #fff; font-size: 13px; font-weight: 700;
+    margin-left: 4px;
+}
 
-/* 錄影鈕 */
+/* 中間：錄影鈕 —— 明確固定寬度，不被 flex 圧縮 */
 .record-btn {
-    width: 62px; height: 62px; background: #FF3B30;
+    width: 62px; height: 62px; flex-shrink: 0;
+    background: #FF3B30;
     border: 4px solid rgba(255,255,255,0.9); border-radius: 50%;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: border-radius .25s cubic-bezier(.4,0,.2,1), background .2s, transform .12s;
-    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent;
 }
 .record-btn:active { transform: scale(0.9); }
 .record-btn.recording { border-radius: 14px; background: #FF6B35; animation: pulse 1.6s infinite; }
@@ -227,6 +218,23 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
 }
 #recordIcon {
     display: block; width: 22px; height: 22px; background: #fff; border-radius: 50%;
-    transition: border-radius .25s cubic-bezier(.4,0,.2,1), width .2s, height .2s;
+    transition: border-radius .25s, width .2s, height .2s;
 }
 .record-btn.recording #recordIcon { border-radius: 4px; width: 18px; height: 18px; }
+
+/* 右側：Flip + Mirror */
+.bar-right {
+    display: flex; align-items: center;
+    gap: 8px; flex: 1; justify-content: flex-end;
+}
+.bar-btn {
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+    color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    transition: background .15s;
+}
+.bar-btn svg.lucide { width: 18px; height: 18px; }
+.bar-btn:active { background: rgba(255,255,255,0.28); }
+.bar-btn.mirror-active { background: rgba(10,132,255,0.3); border-color: rgba(10,132,255,0.65); color: #4db8ff; }
