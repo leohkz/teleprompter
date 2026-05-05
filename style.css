@@ -10,29 +10,18 @@ svg.lucide {
     display: block; flex-shrink: 0; pointer-events: none;
 }
 
-/* z-index 層次表:
-   1   = 鏡頭 video
-   2   = 相機提示
-   50  = 提示詞浮窗
-   100 = 底部工具列
-   200 = 設定抽屜
-   9999 = 倒數覆蓋
-*/
-
 #cameraPreview {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
     object-fit: cover; z-index: 1;
-    /* 預設不鏡像 */
     transition: transform 0.2s;
 }
-#cameraPreview.mirror-off { transform: scaleX(1); }
+#cameraPreview.mirror-on { transform: scaleX(-1); }
 
 #cameraHint {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
     z-index: 2; pointer-events: none;
     color: rgba(255,255,255,0.35); font-size: 15px; font-weight: 500;
-    letter-spacing: 0.5px;
 }
 
 #countdownOverlay {
@@ -55,8 +44,7 @@ svg.lucide {
     min-width: 160px; min-height: 100px;
     background: rgba(0,0,0,0.72);
     border: 1px solid rgba(255,255,255,0.22); border-radius: 18px;
-    z-index: 50;
-    overflow: hidden; touch-action: none;
+    z-index: 50; overflow: hidden; touch-action: none;
 }
 .pwin-btn {
     position: absolute; width: 28px; height: 28px; z-index: 60;
@@ -79,19 +67,15 @@ svg.lucide {
     cursor: nwse-resize; touch-action: none; user-select: none;
 }
 #prompterContainer {
-    position: absolute; inset: 0;
-    overflow: hidden; border-radius: 18px;
-    z-index: 51;
+    position: absolute; inset: 0; overflow: hidden; border-radius: 18px; z-index: 51;
 }
-#prompterContainer::before,
-#prompterContainer::after {
+#prompterContainer::before, #prompterContainer::after {
     content:''; position:absolute; left:0; right:0; height:36px; z-index:15; pointer-events:none;
 }
 #prompterContainer::before { top:0; background:linear-gradient(to bottom,rgba(0,0,0,0.4),transparent); }
 #prompterContainer::after  { bottom:0; background:linear-gradient(to top,rgba(0,0,0,0.4),transparent); }
-
 #scrollingText {
-    position: relative; top: 0; left: 0; width: 100%;
+    position: relative; width: 100%;
     color: #fff; font-size: 30px; font-weight: 700;
     text-align: center; white-space: pre-wrap; line-height: 1.55;
     text-shadow: 0 2px 8px rgba(0,0,0,0.85); padding: 8px;
@@ -130,8 +114,6 @@ svg.lucide {
 .setting-row label { color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap; flex-shrink: 0; }
 .val-badge { color: #fff; font-size: 14px; font-weight: 600; min-width: 52px; text-align: right; }
 #estimatedTime { color: #4CD964; font-size: 15px; font-weight: 600; }
-
-/* 清空按鈕 */
 .clear-btn {
     background: rgba(255,59,48,0.18); border: 1px solid rgba(255,59,48,0.4);
     color: #ff6b60; border-radius: 8px; padding: 4px 12px;
@@ -139,7 +121,6 @@ svg.lucide {
     -webkit-tap-highlight-color: transparent;
 }
 .clear-btn:active { background: rgba(255,59,48,0.35); }
-
 textarea {
     width: 100%; height: 110px; background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.18); border-radius: 12px;
@@ -187,34 +168,27 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.1);
     z-index: 100;
-    padding: 0 24px;
+    padding: 0 16px;
     padding-bottom: env(safe-area-inset-bottom);
     display: flex; align-items: center; justify-content: space-between;
-    gap: 16px;
+    gap: 10px;
 }
 .bar-left {
-    display: flex; align-items: center;
-    flex: 1; justify-content: flex-start;
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
 }
-.mini-ctrl {
-    display: flex; align-items: center; gap: 10px;
-}
-.adj-btn {
-    width: 30px; height: 30px;
-    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
-    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+.bar-btn {
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+    color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    transition: background .15s;
 }
-.adj-btn svg.lucide { width: 13px; height: 13px; }
-.adj-btn:active { background: rgba(255,255,255,0.3); }
-.ctrl-label {
-    color: rgba(255,255,255,0.55); font-size: 10px;
-    min-width: 32px; text-align: center; line-height: 1.3;
-}
-.ctrl-label b {
-    display: block;
-    color: #fff; font-size: 14px; font-weight: 700;
-}
+.bar-btn svg.lucide { width: 19px; height: 19px; }
+.bar-btn:active { background: rgba(255,255,255,0.28); }
+.bar-btn.mirror-active { background: rgba(10,132,255,0.3); border-color: rgba(10,132,255,0.65); color: #4db8ff; }
+
 .record-btn {
     width: 64px; height: 64px; flex-shrink: 0;
     background: #FF3B30;
@@ -234,18 +208,32 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
     transition: border-radius .25s, width .2s, height .2s;
 }
 .record-btn.recording #recordIcon { border-radius: 4px; width: 18px; height: 18px; }
+
+/* ===== WPM 滑竿區（右側） ===== */
 .bar-right {
-    display: flex; align-items: center;
-    gap: 12px; flex: 1; justify-content: flex-end;
+    display: flex; align-items: center; gap: 6px;
+    flex: 1; min-width: 0;
+    justify-content: flex-end;
 }
-.bar-btn {
-    width: 42px; height: 42px;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; -webkit-tap-highlight-color: transparent;
-    transition: background .15s;
+.speed-icon {
+    width: 22px; height: 22px; flex-shrink: 0;
+    stroke: rgba(255,255,255,0.55); fill: none;
+    stroke-linecap: round; stroke-linejoin: round;
 }
-.bar-btn svg.lucide { width: 19px; height: 19px; }
-.bar-btn:active { background: rgba(255,255,255,0.28); }
-.bar-btn.mirror-active { background: rgba(10,132,255,0.3); border-color: rgba(10,132,255,0.65); color: #4db8ff; }
+.wpm-slider-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    flex: 1; min-width: 0;
+}
+.wpm-slider-wrap input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none; height: 4px; border-radius: 4px;
+    background: rgba(255,255,255,0.25); outline: none; cursor: pointer;
+}
+.wpm-slider-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); cursor: pointer;
+}
+.wpm-val {
+    color: rgba(255,255,255,0.7); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.3px;
+}

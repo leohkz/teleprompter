@@ -69,14 +69,6 @@
         </div>
 
         <div class="setting-row">
-            <label data-i18n="wpmLabel">語速 (WPM)</label>
-            <span class="val-badge" id="speedDisplay">120</span>
-        </div>
-        <div class="setting-row slider-row">
-            <input type="range" id="scrollSpeed" min="30" max="400" value="120">
-        </div>
-
-        <div class="setting-row">
             <label data-i18n="fontSizeLabel">字體大小</label>
             <span class="val-badge"><span id="fontSizeDisplay">30</span>px</span>
         </div>
@@ -119,19 +111,9 @@
 
 <!-- 底部工具列 -->
 <div id="bottomBar">
+
+    <!-- 左側：Flip + Mirror -->
     <div class="bar-left">
-        <div class="mini-ctrl">
-            <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
-            <span class="ctrl-label">WPM<br><b id="wpmDisplay">120</b></span>
-            <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
-        </div>
-    </div>
-
-    <button id="btnRecord" class="record-btn">
-        <span id="recordIcon"></span>
-    </button>
-
-    <div class="bar-right">
         <button id="btnFlip" class="bar-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">
@@ -144,6 +126,33 @@
         <button id="btnMirror" class="bar-btn">
             <i data-lucide="flip-horizontal-2"></i>
         </button>
+    </div>
+
+    <!-- 中間：錄影鈕 -->
+    <button id="btnRecord" class="record-btn">
+        <span id="recordIcon"></span>
+    </button>
+
+    <!-- 右側：WPM 滑竿 -->
+    <div class="bar-right">
+        <!-- 走路小人 -->
+        <svg class="speed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="4" r="1.5"/>
+            <path d="M9 8.5l1.5 3L8 15h3l1.5-2.5L14 15h2.5"/>
+            <path d="M10 11.5l-2 5"/>
+            <path d="M14.5 8.5l1 3"/>
+        </svg>
+        <div class="wpm-slider-wrap">
+            <input type="range" id="scrollSpeed" min="30" max="400" value="120">
+            <span class="wpm-val" id="wpmDisplay">120</span>
+        </div>
+        <!-- 跑步小人 -->
+        <svg class="speed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="14" cy="3.5" r="1.5"/>
+            <path d="M12 6.5l-3 2 2 3-3 4h2.5l2-3 2 1.5V16h2v-4.5l-2.5-2 1-3z"/>
+            <path d="M9 8.5l-2.5 1"/>
+            <path d="M13.5 12.5l2.5 2"/>
+        </svg>
     </div>
 </div>
 
