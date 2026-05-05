@@ -19,22 +19,18 @@
 
 <!-- 提示詞浮窗 -->
 <div id="prompterWindow">
-    <!-- 設定鈕：右上角浮層，不占用內部空間 -->
     <button id="btnOpenSettings" class="pwin-btn top-right">
         <i data-lucide="settings"></i>
     </button>
-    <!-- 拖拽鈕：左下角浮層 -->
     <button id="dragHandle" class="pwin-btn bottom-left">
         <i data-lucide="move"></i>
     </button>
-    <!-- 縮放鈕：右下角浮層 -->
     <div id="resizeHandle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">
             <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
             <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
         </svg>
     </div>
-    <!-- 文字區域：充滿整個浮窗，不留任何邊距 -->
     <div id="prompterContainer">
         <div id="scrollingText"></div>
     </div>
@@ -115,20 +111,14 @@
     </div>
 </div>
 
-<!-- 底部工具列（單排） -->
+<!-- 底部工具列 -->
 <div id="bottomBar">
-    <!-- 左側：WPM + 字體 -->
+    <!-- 左側：WPM 調整 -->
     <div class="bar-left">
         <div class="mini-ctrl">
             <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
             <span class="ctrl-label">WPM<br><b id="wpmDisplay">120</b></span>
             <button class="adj-btn" id="wpmUp"><i data-lucide="plus"></i></button>
-        </div>
-        <div class="bar-divider"></div>
-        <div class="mini-ctrl">
-            <button class="adj-btn" id="fsDown"><i data-lucide="minus"></i></button>
-            <span class="ctrl-label"><span data-i18n="fontShort">字</span><br><b id="fsDisplay">30</b></span>
-            <button class="adj-btn" id="fsUp"><i data-lucide="plus"></i></button>
         </div>
     </div>
 

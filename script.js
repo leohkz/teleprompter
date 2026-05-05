@@ -56,7 +56,6 @@ const fontColorInput    = document.getElementById('fontColor');
 const scrollSpeedInput  = document.getElementById('scrollSpeed');
 const speedDisplay      = document.getElementById('speedDisplay');
 const wpmDisplay        = document.getElementById('wpmDisplay');
-const fsDisplay         = document.getElementById('fsDisplay');
 const estimatedTimeEl   = document.getElementById('estimatedTime');
 const prompterContainer = document.getElementById('prompterContainer');
 const prompterWindow    = document.getElementById('prompterWindow');
@@ -79,8 +78,40 @@ const btnRotRight       = document.getElementById('btnRotRight');
 const btnPortrait       = document.getElementById('btnPortrait');
 const wpmDown           = document.getElementById('wpmDown');
 const wpmUp             = document.getElementById('wpmUp');
-const fsDown            = document.getElementById('fsDown');
-const fsUp              = document.getElementById('fsUp');
+
+/* ===== localStorage ===== */
+const STORAGE_KEY = 'teleprompter_v1';
+function saveSettings() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            lang: currentLang,
+            text: textInput.value,
+            wpm: +scrollSpeedInput.value,
+            fontSize: +fontSizeInput.value,
+            fontColor: fontColorInput.value,
+            countdown: +countdownSlider.value,
+            isMirror,
+            facingMode,
+            rot
+        }));
+    } catch(e) {}
+}
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (s.lang) currentLang = s.lang;
+        if (typeof s.text === 'string') textInput.value = s.text;
+        if (s.wpm)  { scrollSpeedInput.value = s.wpm; }
+        if (s.fontSize) { fontSizeInput.value = s.fontSize; }
+        if (s.fontColor) { fontColorInput.value = s.fontColor; }
+        if (typeof s.countdown === 'number') countdownSlider.value = s.countdown;
+        if (typeof s.isMirror === 'boolean') isMirror = s.isMirror;
+        if (s.facingMode) facingMode = s.facingMode;
+        if (typeof s.rot === 'number') rot = s.rot;
+    } catch(e) {}
+}
 
 /* ===== i18n apply ===== */
 function applyI18n() {
@@ -91,7 +122,12 @@ function applyI18n() {
     calcEstimate();
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
-    btn.addEventListener('click', e => { e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n(); })
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        currentLang = btn.dataset.lang;
+        applyI18n();
+        saveSettings();
+    })
 );
 
 /* ===== Camera ===== */
@@ -105,13 +141,16 @@ async function initCamera(facing) {
         video.srcObject = mediaStream;
     } catch(err) { alert(t('camErr')+'\n'+err); }
 }
-initCamera(facingMode);
-video.classList.toggle('mirror-off', !isMirror);
-btnFlip.addEventListener('click', () => { facingMode = facingMode==='user'?'environment':'user'; initCamera(facingMode); });
+btnFlip.addEventListener('click', () => {
+    facingMode = facingMode==='user'?'environment':'user';
+    initCamera(facingMode);
+    saveSettings();
+});
 btnMirror.addEventListener('click', () => {
     isMirror = !isMirror;
     video.classList.toggle('mirror-off', !isMirror);
     btnMirror.classList.toggle('mirror-active', isMirror);
+    saveSettings();
 });
 
 /* ===== Settings ===== */
@@ -125,7 +164,10 @@ window.addEventListener('pointerdown', e => {
 });
 
 /* ===== Countdown slider ===== */
-countdownSlider.addEventListener('input', () => { countdownDisplay.innerText = countdownSlider.value; });
+countdownSlider.addEventListener('input', () => {
+    countdownDisplay.innerText = countdownSlider.value;
+    saveSettings();
+});
 
 /* ===== WPM ===== */
 function syncWPM(val) {
@@ -133,29 +175,31 @@ function syncWPM(val) {
     scrollSpeedInput.value = speedDisplay.innerText = wpmDisplay.innerText = val;
     calcEstimate();
 }
-scrollSpeedInput.addEventListener('input', () => syncWPM(scrollSpeedInput.value));
-wpmDown.addEventListener('click', () => syncWPM(+scrollSpeedInput.value - 10));
-wpmUp.addEventListener('click',   () => syncWPM(+scrollSpeedInput.value + 10));
+scrollSpeedInput.addEventListener('input', () => { syncWPM(scrollSpeedInput.value); saveSettings(); });
+wpmDown.addEventListener('click', () => { syncWPM(+scrollSpeedInput.value - 10); saveSettings(); });
+wpmUp.addEventListener('click',   () => { syncWPM(+scrollSpeedInput.value + 10); saveSettings(); });
 
 /* ===== Font size ===== */
 function syncFS(val) {
     val = Math.max(16, Math.min(100, Math.round(+val)));
-    fontSizeInput.value = fontSizeDisplay.innerText = fsDisplay.innerText = val;
+    fontSizeInput.value = fontSizeDisplay.innerText = val;
     scrollingText.style.fontSize = val + 'px';
     calcEstimate();
 }
-fontSizeInput.addEventListener('input', () => syncFS(fontSizeInput.value));
-fsDown.addEventListener('click', () => syncFS(+fontSizeInput.value - 2));
-fsUp.addEventListener('click',   () => syncFS(+fontSizeInput.value + 2));
+fontSizeInput.addEventListener('input', () => { syncFS(fontSizeInput.value); saveSettings(); });
 
 /* ===== Font color ===== */
-fontColorInput.addEventListener('input', () => { scrollingText.style.color = fontColorInput.value; });
+fontColorInput.addEventListener('input', () => {
+    scrollingText.style.color = fontColorInput.value;
+    saveSettings();
+});
 
 /* ===== Text input ===== */
 textInput.addEventListener('input', () => {
     scrollingText.innerText = textInput.value.trim() ? textInput.value : t('prompterHint');
     resetPrompter();
     calcEstimate();
+    saveSettings();
 });
 
 /* ===== Duration estimate ===== */
@@ -177,9 +221,9 @@ function calcEstimate() {
 
 /* ===== Rotation ===== */
 let rot = 0;
-btnRotLeft.addEventListener('click',  () => { rot=-90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; });
-btnRotRight.addEventListener('click', () => { rot= 90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; });
-btnPortrait.addEventListener('click', () => { rot=  0; resetPrompter(); });
+btnRotLeft.addEventListener('click',  () => { rot=-90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnRotRight.addEventListener('click', () => { rot= 90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnPortrait.addEventListener('click', () => { rot=  0; resetPrompter(); saveSettings(); });
 
 /* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
@@ -226,12 +270,9 @@ let mediaRecorder=null, recordedChunks=[], isRecording=false;
 
 btnRecord.addEventListener('click', () => {
     if (isRecording) {
-        // 正在錄製中 → 停止
         stopRecording();
     } else if (recordedChunks.length > 0) {
-        // 已有錄製完成的影片 → 警告確認後重新錄製
         if (confirm(t('rerecordConfirm'))) {
-            // 清除舊錄製
             recordedChunks = [];
             downloadContainer.style.display = 'none';
             if (downloadLink.href && downloadLink.href !== '#') {
@@ -242,7 +283,6 @@ btnRecord.addEventListener('click', () => {
             startCountdown();
         }
     } else {
-        // 第一次錄製
         startCountdown();
     }
 });
@@ -330,5 +370,15 @@ window.addEventListener('resize', ()=>{ clampWindow(); resetPrompter(); });
 new ResizeObserver(()=>calcEstimate()).observe(prompterContainer);
 
 /* ===== Init ===== */
+loadSettings();
 applyI18n();
+// 套用讀取回來的數值到畫面
+syncWPM(+scrollSpeedInput.value);
+syncFS(+fontSizeInput.value);
+scrollingText.style.color = fontColorInput.value;
+countdownDisplay.innerText = countdownSlider.value;
+video.classList.toggle('mirror-off', !isMirror);
+btnMirror.classList.toggle('mirror-active', isMirror);
+if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
+initCamera(facingMode);
