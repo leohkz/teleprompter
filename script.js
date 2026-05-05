@@ -11,7 +11,8 @@ const I18N = {
         noCamera:'相機未就緒', noRecord:'此設備不支援錄影功能',
         prompterHint:'點右上角 ⚙ 輸入提示詞',
         rerecordConfirm:'上一次錄製將被刪除，確定要重新錄製？',
-        tapToStart:'點擊錄影鈕開始錄製',
+        clearScript:'清空',
+        clearConfirm:'確定清空提示詞？',
     },
     'zh-CN': {
         settings:'设  置', language:'语言',
@@ -24,7 +25,8 @@ const I18N = {
         noCamera:'摄像头未就绪', noRecord:'此设备不支持录制功能',
         prompterHint:'点右上角 ⚙ 输入提示词',
         rerecordConfirm:'上次录制将被删除，确定要重新录制？',
-        tapToStart:'点击录影键开始录制',
+        clearScript:'清空',
+        clearConfirm:'确定清空提示词？',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -37,7 +39,8 @@ const I18N = {
         noCamera:'Camera not ready', noRecord:'Recording not supported on this device',
         prompterHint:'Tap ⚙ to enter your script',
         rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
-        tapToStart:'Tap record to start',
+        clearScript:'Clear',
+        clearConfirm:'Clear the script?',
     }
 };
 function detectLang() {
@@ -50,9 +53,9 @@ let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
 /* ===== state ===== */
-let videoStream = null;  // video-only, for preview
-let audioStream = null;  // audio-only, for recording
-let facingMode = 'user', isMirror = true, rot = 0;
+let videoStream = null;
+let audioStream = null;
+let facingMode = 'user', isMirror = false, rot = 0;  // 預設不鏡像
 let windowMoved = false;
 
 /* ===== DOM ===== */
@@ -88,6 +91,7 @@ const btnPortrait       = document.getElementById('btnPortrait');
 const wpmDown           = document.getElementById('wpmDown');
 const wpmUp             = document.getElementById('wpmUp');
 const cameraHint        = document.getElementById('cameraHint');
+const btnClearScript    = document.getElementById('btnClearScript');
 
 /* ===== localStorage ===== */
 const STORAGE_KEY = 'teleprompter_v1';
@@ -127,6 +131,7 @@ function applyI18n() {
     document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-ph')));
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     if (!textInput.value.trim()) scrollingText.innerText = t('prompterHint');
+    if (btnClearScript) btnClearScript.textContent = t('clearScript');
     calcEstimate();
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
@@ -134,6 +139,18 @@ document.querySelectorAll('.seg-btn').forEach(btn =>
         e.stopPropagation(); currentLang = btn.dataset.lang; applyI18n(); saveSettings();
     })
 );
+
+/* ===== Clear script ===== */
+if (btnClearScript) {
+    btnClearScript.addEventListener('click', () => {
+        if (!textInput.value.trim()) return;
+        if (confirm(t('clearConfirm'))) {
+            textInput.value = '';
+            scrollingText.innerText = t('prompterHint');
+            resetPrompter(); calcEstimate(); saveSettings();
+        }
+    });
+}
 
 /* ===== Camera (video-only preview) ===== */
 async function initCamera(facing) {
@@ -151,7 +168,6 @@ async function initCamera(facing) {
     }
 }
 
-/* ===== Audio (requested once on first record) ===== */
 async function initAudio() {
     if (audioStream) return;
     try {
@@ -263,6 +279,7 @@ function stopScrolling() { isScrolling = false; cancelAnimationFrame(animId); }
 
 /* ===== Recording ===== */
 let mediaRecorder = null, recordedChunks = [], isRecording = false;
+let lastBlobUrl = null;
 
 btnRecord.addEventListener('click', () => {
     if (isRecording) {
@@ -271,10 +288,7 @@ btnRecord.addEventListener('click', () => {
         if (confirm(t('rerecordConfirm'))) {
             recordedChunks = [];
             downloadContainer.style.display = 'none';
-            if (downloadLink.href && downloadLink.href !== '#') {
-                URL.revokeObjectURL(downloadLink.href);
-                downloadLink.href = '#';
-            }
+            if (lastBlobUrl) { URL.revokeObjectURL(lastBlobUrl); lastBlobUrl = null; }
             audioStream = null;
             resetPrompter();
             initCamera(facingMode).then(() => startCountdown());
@@ -310,7 +324,10 @@ async function startRecording() {
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
         if (!recordedChunks.length) return;
-        downloadLink.href = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+        if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+        lastBlobUrl = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+        // 用 window.open 新分頁下載，避免 iOS Safari 替換當前頁面導致需重新授權
+        downloadLink.href = lastBlobUrl;
         downloadContainer.style.display = 'block';
         openSettings();
     };
@@ -393,7 +410,6 @@ video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-// 頁面載入即同時請求相機 + 麥克風（只需授權一次，之後自動通過）
 Promise.all([
     initCamera(facingMode),
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })

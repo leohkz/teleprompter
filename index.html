@@ -13,7 +13,6 @@
 
 <video id="cameraPreview" autoplay playsinline muted></video>
 
-<!-- 相機未啟動時的提示 -->
 <div id="cameraHint">點擊錄影鍵啟動相機</div>
 
 <div id="countdownOverlay">
@@ -56,8 +55,11 @@
             </div>
         </div>
 
-        <div class="setting-row full">
+        <div class="setting-row">
             <label data-i18n="scriptLabel">提示詞</label>
+            <button id="btnClearScript" class="clear-btn" data-i18n="clearScript">清空</button>
+        </div>
+        <div class="setting-row full">
             <textarea id="textInput" data-i18n-ph="scriptPlaceholder" placeholder="請輸入提示詞..."></textarea>
         </div>
 
@@ -105,7 +107,8 @@
         </div>
 
         <div id="downloadContainer">
-            <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">
+            <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4"
+               onclick="if(this.href!='#'){window.open(this.href,'_blank');return false;}">
                 <i data-lucide="download"></i>
                 <span data-i18n="downloadBtn">下載影片</span>
             </a>
@@ -116,7 +119,6 @@
 
 <!-- 底部工具列 -->
 <div id="bottomBar">
-    <!-- 左側：WPM 調整 -->
     <div class="bar-left">
         <div class="mini-ctrl">
             <button class="adj-btn" id="wpmDown"><i data-lucide="minus"></i></button>
@@ -125,12 +127,10 @@
         </div>
     </div>
 
-    <!-- 中間：錄影鈕 -->
     <button id="btnRecord" class="record-btn">
         <span id="recordIcon"></span>
     </button>
 
-    <!-- 右側：Flip + Mirror -->
     <div class="bar-right">
         <button id="btnFlip" class="bar-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -141,7 +141,7 @@
                 <polyline points="19 8 21 10 19 12"/>
             </svg>
         </button>
-        <button id="btnMirror" class="bar-btn mirror-active">
+        <button id="btnMirror" class="bar-btn">
             <i data-lucide="flip-horizontal-2"></i>
         </button>
     </div>

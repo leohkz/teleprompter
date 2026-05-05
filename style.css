@@ -15,18 +15,18 @@ svg.lucide {
    2   = 相機提示
    50  = 提示詞浮窗
    100 = 底部工具列
-   200 = 設定抽岜
+   200 = 設定抽屜
    9999 = 倒數覆蓋
 */
 
 #cameraPreview {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
     object-fit: cover; z-index: 1;
-    transform: scaleX(-1); transition: transform 0.2s;
+    /* 預設不鏡像 */
+    transition: transform 0.2s;
 }
 #cameraPreview.mirror-off { transform: scaleX(1); }
 
-/* 相機未啟動提示 */
 #cameraHint {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -53,7 +53,6 @@ svg.lucide {
     left: calc(50vw - min(45vw, 210px));
     width: min(90vw,420px); height: min(50vh,320px);
     min-width: 160px; min-height: 100px;
-    /* 移除 backdrop-filter 避免 iOS 相機授權後 layer 重組導致元素消失 */
     background: rgba(0,0,0,0.72);
     border: 1px solid rgba(255,255,255,0.22); border-radius: 18px;
     z-index: 50;
@@ -99,7 +98,7 @@ svg.lucide {
     will-change: transform;
 }
 
-/* ===== 設定抽岜 ===== */
+/* ===== 設定抽屜 ===== */
 #settingsDrawer {
     position: fixed; top: 0; left: 0; right: 0; max-height: 84vh;
     background: #111114;
@@ -131,6 +130,16 @@ svg.lucide {
 .setting-row label { color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap; flex-shrink: 0; }
 .val-badge { color: #fff; font-size: 14px; font-weight: 600; min-width: 52px; text-align: right; }
 #estimatedTime { color: #4CD964; font-size: 15px; font-weight: 600; }
+
+/* 清空按鈕 */
+.clear-btn {
+    background: rgba(255,59,48,0.18); border: 1px solid rgba(255,59,48,0.4);
+    color: #ff6b60; border-radius: 8px; padding: 4px 12px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.clear-btn:active { background: rgba(255,59,48,0.35); }
+
 textarea {
     width: 100%; height: 110px; background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.18); border-radius: 12px;
@@ -183,7 +192,6 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
     display: flex; align-items: center; justify-content: space-between;
     gap: 16px;
 }
-
 .bar-left {
     display: flex; align-items: center;
     flex: 1; justify-content: flex-start;
