@@ -49,11 +49,12 @@ function detectLang() {
 let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
-/* ===== 狀態變量 ===== */
+/* ===== \u72c0\u614b\u8b8a\u91cf ===== */
 let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
 let cameraReady = false;
-// 追蹤浮窗是否已被用戶手動拖移過（拖移後才用 left/top 定位）
 let windowMoved = false;
+// \u5f85\u91cd\u9304\u6a19\u8a18\uff1a\u505c\u6b62\u9304\u5f71\u5f8c\u82e5\u70ba true\uff0c\u5247\u5728 onstop \u88e1\u81ea\u52d5\u958b\u59cb\u65b0\u4e00\u8f2a\u5012\u6578
+let pendingRerecord = false;
 
 /* ===== DOM ===== */
 const video             = document.getElementById('cameraPreview');
@@ -143,21 +144,33 @@ document.querySelectorAll('.seg-btn').forEach(btn =>
 
 /* ===== Camera ===== */
 async function initCamera(facing) {
-    if (mediaStream) mediaStream.getTracks().forEach(tr => tr.stop());
+    // \u5148\u505c\u6b62\u820a stream
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(tr => tr.stop());
+        mediaStream = null;
+    }
+    video.srcObject = null;
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-            video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}, audio:true
+            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: true
         });
         video.srcObject = mediaStream;
+        // \u7b49 video \u771f\u6b63\u64ad\u653e\u5f8c\u624d\u6a19\u8a18 ready\uff0c\u907f\u514d\u6388\u6b0a\u5f8c\u7684 resize repaint \u5c0e\u81f4 UI \u554f\u984c
+        await new Promise(resolve => {
+            video.onloadedmetadata = () => { video.play().then(resolve).catch(resolve); };
+            // \u5df2\u7d93\u6709\u5167\u5bb9\u5247\u76f4\u63a5 resolve
+            if (video.readyState >= 2) resolve();
+        });
         cameraReady = true;
         if (cameraHint) cameraHint.style.display = 'none';
     } catch(err) {
         cameraReady = false;
-        alert(t('camErr')+'\n'+err);
+        alert(t('camErr') + '\n' + err);
     }
 }
 btnFlip.addEventListener('click', () => {
-    facingMode = facingMode==='user'?'environment':'user';
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
     if (cameraReady) initCamera(facingMode);
     saveSettings();
 });
@@ -235,9 +248,9 @@ function calcEstimate() {
 }
 
 /* ===== Rotation ===== */
-btnRotLeft.addEventListener('click',  () => { rot=-90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
-btnRotRight.addEventListener('click', () => { rot= 90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; saveSettings(); });
-btnPortrait.addEventListener('click', () => { rot=  0; resetPrompter(); saveSettings(); });
+btnRotLeft.addEventListener('click',  () => { rot = -90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnRotRight.addEventListener('click', () => { rot =  90; scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`; saveSettings(); });
+btnPortrait.addEventListener('click', () => { rot =   0; resetPrompter(); saveSettings(); });
 
 /* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
@@ -280,21 +293,26 @@ function stopScrolling() {
 }
 
 /* ===== Recording ===== */
-let mediaRecorder=null, recordedChunks=[], isRecording=false;
+let mediaRecorder = null, recordedChunks = [], isRecording = false;
 
 btnRecord.addEventListener('click', () => {
     if (isRecording) {
         stopRecording();
     } else if (recordedChunks.length > 0) {
         if (confirm(t('rerecordConfirm'))) {
-            recordedChunks = [];
             downloadContainer.style.display = 'none';
             if (downloadLink.href && downloadLink.href !== '#') {
                 URL.revokeObjectURL(downloadLink.href);
                 downloadLink.href = '#';
             }
             resetPrompter();
-            startWithCamera();
+            // \u91cd\u9304\u6642\u5fc5\u9808\u91cd\u65b0\u53d6\u5f97\u65b0\u7684 MediaStream\uff0c\u907f\u514d\u820a stream \u5c0e\u81f4 freeze
+            recordedChunks = [];
+            pendingRerecord = true;
+            // \u91cd\u65b0 initCamera \u53d6\u5f97\u5168\u65b0 stream\uff0c\u5b8c\u6210\u5f8c\u958b\u59cb\u5012\u6578
+            initCamera(facingMode).then(() => {
+                if (cameraReady) startCountdown();
+            });
         }
     } else {
         startWithCamera();
@@ -311,64 +329,73 @@ async function startWithCamera() {
 
 function startCountdown() {
     let n = +countdownSlider.value || 0;
-    if (n<=0) { startRecording(); return; }
+    if (n <= 0) { startRecording(); return; }
     countdownNumber.innerText = n;
     countdownOverlay.classList.add('active');
     const timer = setInterval(() => {
-        if (--n>0) countdownNumber.innerText=n;
+        if (--n > 0) countdownNumber.innerText = n;
         else { clearInterval(timer); countdownOverlay.classList.remove('active'); startRecording(); }
     }, 1000);
 }
+
 function startRecording() {
     if (!mediaStream) { alert(t('noCamera')); return; }
     recordedChunks = [];
     try {
         const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
                    : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
-        mediaRecorder = mime ? new MediaRecorder(mediaStream,{mimeType:mime}) : new MediaRecorder(mediaStream);
+        mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
     } catch(e) { alert(t('noRecord')); return; }
-    mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
-        downloadLink.href = URL.createObjectURL(new Blob(recordedChunks,{type:'video/mp4'}));
-        downloadContainer.style.display = 'block'; openSettings();
+        if (pendingRerecord) {
+            pendingRerecord = false;
+            return; // \u91cd\u9304\u6d41\u7a0b\u5df2\u7531 btnRecord \u8655\u7406\uff0c\u4e0d\u8f38\u51fa\u4e0b\u8f09
+        }
+        downloadLink.href = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+        downloadContainer.style.display = 'block';
+        openSettings();
     };
-    mediaRecorder.start(); isRecording=true;
+    mediaRecorder.start();
+    isRecording = true;
     btnRecord.classList.add('recording');
-    downloadContainer.style.display='none';
-    closeSettings(); startScrolling();
+    downloadContainer.style.display = 'none';
+    closeSettings();
+    startScrolling();
 }
+
 function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop();
-    isRecording=false; btnRecord.classList.remove('recording'); stopScrolling();
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    isRecording = false;
+    btnRecord.classList.remove('recording');
+    stopScrolling();
 }
 
 /* ===== Drag ===== */
-let drag=false, dragSX, dragSY, dragL0, dragT0;
+let drag = false, dragSX, dragSY, dragL0, dragT0;
 dragHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); dragHandle.setPointerCapture(e.pointerId);
-    // 拖移前先把 CSS transform 轉成 left/top 絕對座標
     const r = prompterWindow.getBoundingClientRect();
     prompterWindow.style.left = r.left + 'px';
     prompterWindow.style.top  = r.top  + 'px';
     prompterWindow.style.transform = 'none';
     windowMoved = true;
-    drag=true; dragSX=e.clientX; dragSY=e.clientY; dragL0=r.left; dragT0=r.top;
+    drag = true; dragSX = e.clientX; dragSY = e.clientY; dragL0 = r.left; dragT0 = r.top;
 });
 dragHandle.addEventListener('pointermove', e => {
-    if(!drag) return; e.preventDefault();
-    const BH=document.getElementById('bottomBar').offsetHeight;
-    const pw=prompterWindow;
-    pw.style.left=Math.max(0,Math.min(dragL0+e.clientX-dragSX,window.innerWidth-pw.offsetWidth))+'px';
-    pw.style.top =Math.max(0,Math.min(dragT0+e.clientY-dragSY,window.innerHeight-pw.offsetHeight-BH))+'px';
+    if (!drag) return; e.preventDefault();
+    const BH = document.getElementById('bottomBar').offsetHeight;
+    const pw = prompterWindow;
+    pw.style.left = Math.max(0, Math.min(dragL0 + e.clientX - dragSX, window.innerWidth  - pw.offsetWidth))  + 'px';
+    pw.style.top  = Math.max(0, Math.min(dragT0 + e.clientY - dragSY, window.innerHeight - pw.offsetHeight - BH)) + 'px';
 });
-dragHandle.addEventListener('pointerup',     ()=>drag=false);
-dragHandle.addEventListener('pointercancel', ()=>drag=false);
+dragHandle.addEventListener('pointerup',     () => drag = false);
+dragHandle.addEventListener('pointercancel', () => drag = false);
 
 /* ===== Resize ===== */
-let resize=false, resSX, resSY, resW0, resH0;
+let resize = false, resSX, resSY, resW0, resH0;
 resizeHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); resizeHandle.setPointerCapture(e.pointerId);
-    // 縮放前同樣固定 left/top
     if (!windowMoved) {
         const r = prompterWindow.getBoundingClientRect();
         prompterWindow.style.left = r.left + 'px';
@@ -376,30 +403,31 @@ resizeHandle.addEventListener('pointerdown', e => {
         prompterWindow.style.transform = 'none';
         windowMoved = true;
     }
-    resize=true; resSX=e.clientX; resSY=e.clientY;
-    resW0=prompterWindow.offsetWidth; resH0=prompterWindow.offsetHeight;
+    resize = true; resSX = e.clientX; resSY = e.clientY;
+    resW0 = prompterWindow.offsetWidth; resH0 = prompterWindow.offsetHeight;
 });
 resizeHandle.addEventListener('pointermove', e => {
-    if(!resize) return; e.preventDefault();
-    const BH=document.getElementById('bottomBar').offsetHeight;
-    const rect=prompterWindow.getBoundingClientRect();
-    prompterWindow.style.width =Math.max(160,Math.min(resW0+e.clientX-resSX,window.innerWidth-rect.left))+'px';
-    prompterWindow.style.height=Math.max(100,Math.min(resH0+e.clientY-resSY,window.innerHeight-rect.top-BH))+'px';
+    if (!resize) return; e.preventDefault();
+    const BH   = document.getElementById('bottomBar').offsetHeight;
+    const rect = prompterWindow.getBoundingClientRect();
+    prompterWindow.style.width  = Math.max(160, Math.min(resW0 + e.clientX - resSX, window.innerWidth  - rect.left)) + 'px';
+    prompterWindow.style.height = Math.max(100, Math.min(resH0 + e.clientY - resSY, window.innerHeight - rect.top - BH)) + 'px';
     calcEstimate();
 });
-resizeHandle.addEventListener('pointerup',     ()=>resize=false);
-resizeHandle.addEventListener('pointercancel', ()=>resize=false);
+resizeHandle.addEventListener('pointerup',     () => resize = false);
+resizeHandle.addEventListener('pointercancel', () => resize = false);
 
-/* ===== Clamp（只在用戶已拖移過的情況下才 clamp） ===== */
+/* ===== Clamp ===== */
 function clampWindow() {
-    if (!windowMoved) return; // 未拖移過則保持 CSS 原始 transform 置中，不干預
-    const BH=document.getElementById('bottomBar').offsetHeight;
-    const pw=prompterWindow; const r=pw.getBoundingClientRect();
-    pw.style.left=Math.max(0,Math.min(r.left,window.innerWidth-pw.offsetWidth))+'px';
-    pw.style.top =Math.max(0,Math.min(r.top, window.innerHeight-pw.offsetHeight-BH))+'px';
+    if (!windowMoved) return;
+    const BH = document.getElementById('bottomBar').offsetHeight;
+    const pw = prompterWindow;
+    const r  = pw.getBoundingClientRect();
+    pw.style.left = Math.max(0, Math.min(r.left, window.innerWidth  - pw.offsetWidth))  + 'px';
+    pw.style.top  = Math.max(0, Math.min(r.top,  window.innerHeight - pw.offsetHeight - BH)) + 'px';
 }
-window.addEventListener('resize', ()=>{ clampWindow(); resetPrompter(); });
-new ResizeObserver(()=>calcEstimate()).observe(prompterContainer);
+window.addEventListener('resize', () => { clampWindow(); resetPrompter(); });
+new ResizeObserver(() => calcEstimate()).observe(prompterContainer);
 
 /* ===== Init ===== */
 loadSettings();
@@ -412,4 +440,3 @@ video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-// 不自動啟動相機，等用戶點擊錄影鍵才請求授權
