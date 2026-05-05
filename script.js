@@ -47,7 +47,9 @@ let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
 /* ===== state ===== */
-let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
+let videoStream = null;   // 純 video，用於 preview
+let audioStream = null;   // 純 audio，錄影前才取得
+let facingMode = 'user', isMirror = true, rot = 0;
 let windowMoved = false;
 
 /* ===== DOM ===== */
@@ -98,20 +100,33 @@ document.querySelectorAll('.seg-btn').forEach(btn =>
     })
 );
 
-/* ===== Camera ===== */
+/* ===== Camera (video only, no audio) ===== */
 async function initCamera(facing) {
-    if (mediaStream) { mediaStream.getTracks().forEach(tr => tr.stop()); mediaStream = null; }
+    if (videoStream) { videoStream.getTracks().forEach(tr => tr.stop()); videoStream = null; }
     video.srcObject = null;
     try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true
+        // 只請求 video，不請求 audio → iOS 不會顯示原生音訊按鈕
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
         });
-        video.srcObject = mediaStream;
+        video.srcObject = videoStream;
         if (cameraHint) cameraHint.style.display = 'none';
     } catch(err) {
         alert(t('camErr') + '\n' + err);
     }
 }
+
+/* 錄影前才另外取得 audio stream */
+async function initAudio() {
+    if (audioStream) return; // 已有則不重新取得
+    try {
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(err) {
+        console.warn('Audio unavailable:', err);
+    }
+}
+
 btnFlip.addEventListener('click', () => {
     facingMode = facingMode === 'user' ? 'environment' : 'user';
     initCamera(facingMode);
@@ -225,6 +240,7 @@ btnRecord.addEventListener('click', () => {
                 URL.revokeObjectURL(downloadLink.href);
                 downloadLink.href = '#';
             }
+            audioStream = null; // 重置 audio stream 下次錄影重新取得
             resetPrompter();
             initCamera(facingMode).then(() => startCountdown());
         }
@@ -244,13 +260,19 @@ function startCountdown() {
     }, 1000);
 }
 
-function startRecording() {
-    if (!mediaStream) { alert(t('noCamera')); return; }
+async function startRecording() {
+    if (!videoStream) { alert(t('noCamera')); return; }
+    // 錄影前才取得 audio
+    await initAudio();
+    // 將 video + audio tracks 合並為一個轉播 stream
+    const tracks = [...videoStream.getVideoTracks()];
+    if (audioStream) tracks.push(...audioStream.getAudioTracks());
+    const recStream = new MediaStream(tracks);
     recordedChunks = [];
     try {
         const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
                    : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
-        mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
+        mediaRecorder = mime ? new MediaRecorder(recStream, { mimeType: mime }) : new MediaRecorder(recStream);
     } catch(e) { alert(t('noRecord')); return; }
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
@@ -336,5 +358,5 @@ countdownDisplay.innerText = countdownSlider.value;
 video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 resetPrompter();
-// 頁面載入即請求相機授權
+// 頁面載入即開啟純 video stream（不包含 audio）
 initCamera(facingMode);
