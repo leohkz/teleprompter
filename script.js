@@ -10,6 +10,7 @@ const I18N = {
         camErr:'\u7121\u6cd5\u555f\u52d5\u76f8\u6a5f\uff0c\u8acb\u78ba\u8a8d\u6388\u6b0a\u4e26\u5728 HTTPS \u4e0b\u904b\u884c\u3002',
         noCamera:'\u76f8\u6a5f\u672a\u5c31\u7dd2', noRecord:'\u6b64\u8a2d\u5099\u4e0d\u652f\u63f4\u9304\u5f71\u529f\u80fd',
         prompterHint:'\u9ede\u53f3\u4e0a\u89d2 \u2699 \u8f38\u5165\u63d0\u793a\u8a5e',
+        rerecordConfirm:'\u4e0a\u4e00\u6b21\u9304\u88fd\u5c07\u88ab\u522a\u9664\uff0c\u78ba\u5b9a\u8981\u91cd\u65b0\u9304\u88fd\uff1f',
     },
     'zh-CN': {
         settings:'\u8bbe  \u7f6e', language:'\u8bed\u8a00',
@@ -21,6 +22,7 @@ const I18N = {
         camErr:'\u65e0\u6cd5\u542f\u52a8\u6444\u50cf\u5934\uff0c\u8bf7\u786e\u8ba4\u6388\u6743\u5e76\u5728 HTTPS \u4e0b\u8fd0\u884c\u3002',
         noCamera:'\u6444\u50cf\u5934\u672a\u5c31\u7eea', noRecord:'\u6b64\u8bbe\u5907\u4e0d\u652f\u6301\u5f55\u5236\u529f\u80fd',
         prompterHint:'\u70b9\u53f3\u4e0a\u89d2 \u2699 \u8f93\u5165\u63d0\u793a\u8bcd',
+        rerecordConfirm:'\u4e0a\u6b21\u5f55\u5236\u5c06\u88ab\u5220\u9664\uff0c\u786e\u5b9a\u8981\u91cd\u65b0\u5f55\u5236\uff1f',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -32,6 +34,7 @@ const I18N = {
         camErr:'Cannot start camera. Please allow access and use HTTPS.',
         noCamera:'Camera not ready', noRecord:'Recording not supported on this device',
         prompterHint:'Tap \u2699 to enter your script',
+        rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
     }
 };
 function detectLang() {
@@ -155,12 +158,7 @@ textInput.addEventListener('input', () => {
     calcEstimate();
 });
 
-/* ===== Duration estimate =====
- * 正確公式：
- * WPM = 每分鐘讀的字數
- * 字數 / WPM = 分鐘數
- * 不需要經過行寬/行高轉換
- */
+/* ===== Duration estimate ===== */
 function countUnits(text) {
     return (text.match(/[\u4e00-\u9fff\u3400-\u4dbf\uff01-\uff60\u3000-\u303f]/g)||[]).length +
            (text.match(/[a-zA-Z0-9]+/g)||[]).length;
@@ -173,7 +171,6 @@ function fmtDuration(totalSecs) {
 function calcEstimate() {
     const text = textInput.value.trim();
     if (!text) { estimatedTimeEl.innerText = '0:00'; return; }
-    // 直接用字數 ÷ WPM 得分鐘數，再× 60 得秒數
     const secs = (countUnits(text) / (+scrollSpeedInput.value || 120)) * 60;
     estimatedTimeEl.innerText = fmtDuration(secs);
 }
@@ -184,13 +181,7 @@ btnRotLeft.addEventListener('click',  () => { rot=-90; scrollingText.style.trans
 btnRotRight.addEventListener('click', () => { rot= 90; scrollingText.style.transform=`translateY(0) rotate(${rot}deg)`; });
 btnPortrait.addEventListener('click', () => { rot=  0; resetPrompter(); });
 
-/* ===== Scroll =====
- * 使用 translateY 控制滾動
- * 簡化版公式：
- *   每分鐘滾動行數 = WPM / charsPerLine
- *   每分鐘滾動 px = (WPM / charsPerLine) * lineH
- *   每秒 px = 以上 / 60
- */
+/* ===== Scroll ===== */
 let scrollOffset = 0, isScrolling = false, animId = null, lastTS = null;
 
 function getPxPerSec() {
@@ -232,7 +223,29 @@ function stopScrolling() {
 
 /* ===== Recording ===== */
 let mediaRecorder=null, recordedChunks=[], isRecording=false;
-btnRecord.addEventListener('click', () => { isRecording ? stopRecording() : startCountdown(); });
+
+btnRecord.addEventListener('click', () => {
+    if (isRecording) {
+        // 正在錄製中 → 停止
+        stopRecording();
+    } else if (recordedChunks.length > 0) {
+        // 已有錄製完成的影片 → 警告確認後重新錄製
+        if (confirm(t('rerecordConfirm'))) {
+            // 清除舊錄製
+            recordedChunks = [];
+            downloadContainer.style.display = 'none';
+            if (downloadLink.href && downloadLink.href !== '#') {
+                URL.revokeObjectURL(downloadLink.href);
+                downloadLink.href = '#';
+            }
+            resetPrompter();
+            startCountdown();
+        }
+    } else {
+        // 第一次錄製
+        startCountdown();
+    }
+});
 
 function startCountdown() {
     let n = +countdownSlider.value || 0;

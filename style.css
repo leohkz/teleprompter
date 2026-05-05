@@ -44,7 +44,7 @@ svg.lucide {
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.22); border-radius: 18px;
-    z-index: 50;          /* 高於鏡頭 */
+    z-index: 50;
     overflow: hidden; touch-action: none;
 }
 .pwin-btn {
@@ -70,7 +70,7 @@ svg.lucide {
 #prompterContainer {
     position: absolute; inset: 0;
     overflow: hidden; border-radius: 18px;
-    z-index: 51;          /* 高於浮窗本身，確保文字可見 */
+    z-index: 51;
 }
 #prompterContainer::before,
 #prompterContainer::after {
@@ -92,7 +92,7 @@ svg.lucide {
     position: fixed; top: 0; left: 0; right: 0; max-height: 84vh;
     background: #111114;
     border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
-    z-index: 200;         /* 最高層（除倒數）*/
+    z-index: 200;
     transform: translateY(-105%);
     transition: transform .38s cubic-bezier(.4,0,.2,1);
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
@@ -165,20 +165,27 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
     background: rgba(8,8,12,0.92);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.1);
-    z-index: 100;         /* 高於提示詞浮窗，低於設定抽屜 */
+    z-index: 100;
     padding: 0 16px;
     padding-bottom: env(safe-area-inset-bottom);
     display: flex; align-items: center; justify-content: space-between;
 }
 
-/* 左側：上下排 WPM + 字體 */
+/* 左側：WPM + 字體（改為 row，垂直居中） */
 .bar-left {
-    display: flex; flex-direction: column;
-    gap: 4px; flex: 1;
-    align-items: flex-start;
+    display: flex; flex-direction: row;
+    align-items: center;
+    gap: 8px; flex: 1;
 }
 
-/* 每一行: [-] 標籤 [+] */
+/* 分隔線 */
+.bar-divider {
+    width: 1px; height: 32px;
+    background: rgba(255,255,255,0.18);
+    flex-shrink: 0;
+}
+
+/* 每一控制組: [-] 標籤 [+] */
 .mini-ctrl {
     display: flex; align-items: center; gap: 6px;
 }
@@ -194,14 +201,14 @@ input[type="color"] { width: 44px; height: 36px; border: none; border-radius: 8p
 /* 標籤文字 */
 .ctrl-label {
     color: rgba(255,255,255,0.55); font-size: 10px;
-    min-width: 20px; text-align: left;
+    min-width: 28px; text-align: center; line-height: 1.3;
 }
 .ctrl-label b {
+    display: block;
     color: #fff; font-size: 13px; font-weight: 700;
-    margin-left: 4px;
 }
 
-/* 中間：錄影鈕 —— 明確固定寬度，不被 flex 圧縮 */
+/* 中間：錄影鈕 */
 .record-btn {
     width: 62px; height: 62px; flex-shrink: 0;
     background: #FF3B30;
