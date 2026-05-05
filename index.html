@@ -20,95 +20,112 @@
 
     <!-- ===== 提示詞浮窗 ===== -->
     <div id="prompterWindow">
-        <!-- 小拖拽按鈕（左上角） -->
-        <button id="dragHandle" title="拖拽移動">⠿</button>
-        <!-- 設定按鈕（右上角） -->
-        <button id="btnOpenSettings" title="設定">⚙</button>
+
+        <!-- 右上角設定按鈕 -->
+        <button id="btnOpenSettings" class="pwin-btn top-right">設定</button>
 
         <!-- 文字可視區域 -->
         <div id="prompterContainer">
             <div id="textWrapper">
-                <div id="scrollingText">請先點右上角 ⚙ 輸入提示詞…</div>
+                <div id="scrollingText">請先點右上角「設定」輸入提示詞…</div>
             </div>
         </div>
 
-        <!-- 縮放把手（右下角） -->
-        <div id="resizeHandle">⤡</div>
+        <!-- 左下角拖拽按鈕 -->
+        <button id="dragHandle" class="pwin-btn bottom-left">移動</button>
+
+        <!-- 右下角縮放把手 -->
+        <div id="resizeHandle">⊿</div>
     </div>
 
-    <!-- ===== 設定抽屜（從上滑出） ===== -->
+    <!-- ===== 設定抽屜（從頂部滑入）===== -->
     <div id="settingsDrawer">
         <div id="drawerHeader">
-            <span>設 定</span>
-            <button id="btnCloseSettings">✕</button>
+            <span>設　定</span>
+            <button id="btnCloseSettings">關閉</button>
         </div>
 
         <div class="drawer-body">
-            <!-- 提示詞輸入 -->
+
             <div class="setting-row full">
                 <label>提示詞內容</label>
                 <textarea id="textInput" placeholder="請在此輸入您的提示詞..."></textarea>
             </div>
 
-            <!-- 預計時長 -->
             <div class="setting-row">
                 <label>預計影片時長</label>
                 <strong id="estimatedTime">0.0 秒</strong>
             </div>
 
-            <!-- 字體大小 -->
+            <div class="setting-row">
+                <label>語速（WPM）<span id="speedDisplay">120</span></label>
+                <input type="range" id="scrollSpeed" min="30" max="400" value="120">
+            </div>
+
             <div class="setting-row">
                 <label>字體大小 <span id="fontSizeDisplay">30</span>px</label>
                 <input type="range" id="fontSize" min="16" max="100" value="30">
             </div>
 
-            <!-- 語速 -->
-            <div class="setting-row">
-                <label>語速 <span id="speedDisplay">30</span></label>
-                <input type="range" id="scrollSpeed" min="1" max="100" value="30">
-            </div>
-
-            <!-- 字體顏色 -->
             <div class="setting-row">
                 <label>文字顏色</label>
                 <input type="color" id="fontColor" value="#ffffff">
             </div>
 
-            <!-- 倒計時 -->
             <div class="setting-row">
                 <label>錄影倒計時（秒）</label>
                 <input type="number" id="countdownTime" value="3" min="0" max="10">
             </div>
 
-            <!-- 旋轉 -->
             <div class="setting-row">
-                <label>提詞器旋轉</label>
+                <label>提示器旋轉</label>
                 <div class="btn-group">
-                    <button id="btnRotLeft">↺ 左旋</button>
-                    <button id="btnPortrait">↕ 正常</button>
-                    <button id="btnRotRight">↻ 右旋</button>
+                    <button id="btnRotLeft">左旋 90</button>
+                    <button id="btnPortrait">正常</button>
+                    <button id="btnRotRight">右旋 90</button>
                 </div>
             </div>
 
-            <!-- 下載 -->
             <div id="downloadContainer">
-                <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">⬇ 下載錄影</a>
+                <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">下載影片</a>
             </div>
+
         </div>
     </div>
 
     <!-- ===== 底部固定工具列 ===== -->
     <div id="bottomBar">
-        <!-- 左：切換鏡頭 -->
-        <button id="btnFlip" class="bar-btn">🔄</button>
 
-        <!-- 中：錄影按鈕 -->
-        <button id="btnRecord" class="record-btn">
-            <span id="recordIcon"></span>
-        </button>
+        <!-- 左側控制區 -->
+        <div class="bar-side left-controls">
+            <div class="mini-control">
+                <button class="adj-btn" id="wpmDown">－</button>
+                <span class="ctrl-label">WPM<br><span id="wpmDisplay">120</span></span>
+                <button class="adj-btn" id="wpmUp">＋</button>
+            </div>
+        </div>
 
-        <!-- 右：設定 -->
-        <button id="btnBottomSettings" class="bar-btn">⚙</button>
+        <!-- 中央按鈕區 -->
+        <div class="bar-center">
+            <!-- 切換鏡頭 -->
+            <button id="btnFlip" class="bar-btn">翻轉</button>
+            <!-- 錄影 -->
+            <button id="btnRecord" class="record-btn">
+                <span id="recordIcon"></span>
+            </button>
+            <!-- 反鏡像 -->
+            <button id="btnMirror" class="bar-btn mirror-active">鏡像</button>
+        </div>
+
+        <!-- 右側控制區 -->
+        <div class="bar-side right-controls">
+            <div class="mini-control">
+                <button class="adj-btn" id="fsDown">－</button>
+                <span class="ctrl-label">字體<br><span id="fsDisplay">30</span>px</span>
+                <button class="adj-btn" id="fsUp">＋</button>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
