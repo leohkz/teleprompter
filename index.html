@@ -18,6 +18,9 @@
     <span id="countdownNumber">3</span>
 </div>
 
+<!-- 錄製計時器 -->
+<div id="recTimer" style="display:none;">⏺ <span id="recTimerDisplay">00:00</span></div>
+
 <!-- 提示詞浮窗 -->
 <div id="prompterWindow">
     <button id="btnOpenSettings" class="pwin-btn top-right">
@@ -37,48 +40,16 @@
     </div>
 </div>
 
-<!-- WPM 滑桿浮層（相機画面下方、底列上方） -->
+<!-- WPM 滑桿浮層 -->
 <div id="wpmBar">
-    <!-- 走路剪影 -->
-    <svg class="speed-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <!-- head -->
-        <circle cx="55" cy="10" r="9" fill="currentColor"/>
-        <!-- body -->
-        <line x1="55" y1="19" x2="50" y2="50" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <!-- left arm -->
-        <line x1="53" y1="30" x2="30" y2="42" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- right arm -->
-        <line x1="51" y1="33" x2="70" y2="28" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- left leg -->
-        <line x1="50" y1="50" x2="35" y2="72" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <line x1="35" y1="72" x2="28" y2="90" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- right leg -->
-        <line x1="50" y1="50" x2="65" y2="68" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <line x1="65" y1="68" x2="75" y2="88" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-    </svg>
+    <span class="speed-label slow-label">慢</span>
 
     <div class="wpm-slider-wrap">
         <input type="range" id="scrollSpeed" min="30" max="400" value="120">
         <span class="wpm-val" id="wpmDisplay">120 WPM</span>
     </div>
 
-    <!-- 跑步剪影 -->
-    <svg class="speed-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <!-- head -->
-        <circle cx="62" cy="9" r="9" fill="currentColor"/>
-        <!-- body -->
-        <line x1="60" y1="18" x2="48" y2="46" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <!-- right arm (back, swinging forward) -->
-        <line x1="56" y1="28" x2="78" y2="18" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- left arm (swinging back) -->
-        <line x1="54" y1="32" x2="30" y2="48" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- right leg (pushing back) -->
-        <line x1="48" y1="46" x2="68" y2="62" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <line x1="68" y1="62" x2="82" y2="52" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <!-- left leg (forward stride) -->
-        <line x1="48" y1="46" x2="32" y2="68" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-        <line x1="32" y1="68" x2="22" y2="90" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-    </svg>
+    <span class="speed-label fast-label">快</span>
 </div>
 
 <!-- 設定抽屜 -->
