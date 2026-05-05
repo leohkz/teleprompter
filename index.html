@@ -3,74 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPad/iPhone 拍攝提示詞器</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>提示詞器</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 攝影機預覽背景 -->
+
+    <!-- 鏡頭全屏背景 -->
     <video id="cameraPreview" autoplay playsinline muted></video>
 
-    <!-- 控制面板 -->
-    <div id="controlPanel">
-        <h3>提示詞控制台</h3>
-        <textarea id="textInput" placeholder="請在此輸入您的提示詞..."></textarea>
-        
-        <div class="control-group">
-            <label>字體大小: <span id="fontSizeDisplay">30</span>px</label>
-            <input type="range" id="fontSize" min="16" max="100" value="30">
-        </div>
-
-        <div class="control-group">
-            <label>字體顏色:</label>
-            <input type="color" id="fontColor" value="#ffffff">
-        </div>
-
-        <div class="control-group">
-            <label>語速 (滑動速度): <span id="speedDisplay">5</span></label>
-            <input type="range" id="scrollSpeed" min="1" max="100" value="30">
-        </div>
-
-        <div class="control-group">
-            <label>錄影倒計時 (秒):</label>
-            <input type="number" id="countdownTime" value="3" min="0" max="10">
-        </div>
-
-        <div class="control-group">
-            <label>預計影片時長:</label>
-            <strong id="estimatedTime" style="color: #4CAF50;">0.0 秒</strong>
-        </div>
-
-        <div class="control-group button-group">
-            <button id="btnRotLeft">左旋 90°</button>
-            <button id="btnPortrait">Portrait (正常)</button>
-            <button id="btnRotRight">右旋 90°</button>
-        </div>
-
-        <div class="control-group">
-            <button id="btnRecord" class="record-btn">開始錄影 (包含提示詞)</button>
-            <button id="btnStop" class="stop-btn" style="display:none;">停止錄影</button>
-        </div>
-        
-        <!-- 錄影完成後的下載連結容器 -->
-        <div id="downloadContainer" style="display:none; margin-top: 10px;">
-            <a id="downloadLink" class="download-btn" href="#" download="recorded_video.mp4">下載影片</a>
-        </div>
+    <!-- 倒數計時全屏覆蓋 -->
+    <div id="countdownOverlay">
+        <span id="countdownNumber">3</span>
     </div>
 
-    <!-- 提示詞半透明浮窗 -->
+    <!-- ===== 提示詞浮窗 ===== -->
     <div id="prompterWindow">
-        <div id="dragHandle">☷ 拖拽此處移動</div>
+        <!-- 小拖拽按鈕（左上角） -->
+        <button id="dragHandle" title="拖拽移動">⠿</button>
+        <!-- 設定按鈕（右上角） -->
+        <button id="btnOpenSettings" title="設定">⚙</button>
+
+        <!-- 文字可視區域 -->
         <div id="prompterContainer">
             <div id="textWrapper">
-                <div id="scrollingText">請在此輸入您的提示詞...</div>
+                <div id="scrollingText">請先點右上角 ⚙ 輸入提示詞…</div>
             </div>
         </div>
-        <div id="resizeHandle">↘</div>
+
+        <!-- 縮放把手（右下角） -->
+        <div id="resizeHandle">⤡</div>
     </div>
 
-    <!-- 倒數計時全螢幕覆蓋 -->
-    <div id="countdownOverlay" style="display: none;">
-        <span id="countdownNumber">3</span>
+    <!-- ===== 設定抽屜（從上滑出） ===== -->
+    <div id="settingsDrawer">
+        <div id="drawerHeader">
+            <span>設 定</span>
+            <button id="btnCloseSettings">✕</button>
+        </div>
+
+        <div class="drawer-body">
+            <!-- 提示詞輸入 -->
+            <div class="setting-row full">
+                <label>提示詞內容</label>
+                <textarea id="textInput" placeholder="請在此輸入您的提示詞..."></textarea>
+            </div>
+
+            <!-- 預計時長 -->
+            <div class="setting-row">
+                <label>預計影片時長</label>
+                <strong id="estimatedTime">0.0 秒</strong>
+            </div>
+
+            <!-- 字體大小 -->
+            <div class="setting-row">
+                <label>字體大小 <span id="fontSizeDisplay">30</span>px</label>
+                <input type="range" id="fontSize" min="16" max="100" value="30">
+            </div>
+
+            <!-- 語速 -->
+            <div class="setting-row">
+                <label>語速 <span id="speedDisplay">30</span></label>
+                <input type="range" id="scrollSpeed" min="1" max="100" value="30">
+            </div>
+
+            <!-- 字體顏色 -->
+            <div class="setting-row">
+                <label>文字顏色</label>
+                <input type="color" id="fontColor" value="#ffffff">
+            </div>
+
+            <!-- 倒計時 -->
+            <div class="setting-row">
+                <label>錄影倒計時（秒）</label>
+                <input type="number" id="countdownTime" value="3" min="0" max="10">
+            </div>
+
+            <!-- 旋轉 -->
+            <div class="setting-row">
+                <label>提詞器旋轉</label>
+                <div class="btn-group">
+                    <button id="btnRotLeft">↺ 左旋</button>
+                    <button id="btnPortrait">↕ 正常</button>
+                    <button id="btnRotRight">↻ 右旋</button>
+                </div>
+            </div>
+
+            <!-- 下載 -->
+            <div id="downloadContainer">
+                <a id="downloadLink" class="download-btn" href="#" download="teleprompter.mp4">⬇ 下載錄影</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 底部固定工具列 ===== -->
+    <div id="bottomBar">
+        <!-- 左：切換鏡頭 -->
+        <button id="btnFlip" class="bar-btn">🔄</button>
+
+        <!-- 中：錄影按鈕 -->
+        <button id="btnRecord" class="record-btn">
+            <span id="recordIcon"></span>
+        </button>
+
+        <!-- 右：設定 -->
+        <button id="btnBottomSettings" class="bar-btn">⚙</button>
     </div>
 
     <script src="script.js"></script>

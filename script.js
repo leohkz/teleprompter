@@ -1,312 +1,279 @@
-// ====== DOM 元素獲取 ======
-const video = document.getElementById('cameraPreview');
-const textInput = document.getElementById('textInput');
-const scrollingText = document.getElementById('scrollingText');
-const fontSizeInput = document.getElementById('fontSize');
-const fontSizeDisplay = document.getElementById('fontSizeDisplay');
-const fontColorInput = document.getElementById('fontColor');
+/* ===== DOM ===== */
+const video            = document.getElementById('cameraPreview');
+const textInput        = document.getElementById('textInput');
+const scrollingText    = document.getElementById('scrollingText');
+const fontSizeInput    = document.getElementById('fontSize');
+const fontSizeDisplay  = document.getElementById('fontSizeDisplay');
+const fontColorInput   = document.getElementById('fontColor');
 const scrollSpeedInput = document.getElementById('scrollSpeed');
-const speedDisplay = document.getElementById('speedDisplay');
-const estimatedTimeDisplay = document.getElementById('estimatedTime');
-const textWrapper = document.getElementById('textWrapper');
-const prompterContainer = document.getElementById('prompterContainer');
-
-// 控制按鈕
-const btnRotLeft = document.getElementById('btnRotLeft');
-const btnRotRight = document.getElementById('btnRotRight');
-const btnPortrait = document.getElementById('btnPortrait');
-const btnRecord = document.getElementById('btnRecord');
-const btnStop = document.getElementById('btnStop');
+const speedDisplay     = document.getElementById('speedDisplay');
+const estimatedTime    = document.getElementById('estimatedTime');
+const textWrapper      = document.getElementById('textWrapper');
+const prompterContainer= document.getElementById('prompterContainer');
+const prompterWindow   = document.getElementById('prompterWindow');
+const dragHandle       = document.getElementById('dragHandle');
+const resizeHandle     = document.getElementById('resizeHandle');
 const countdownOverlay = document.getElementById('countdownOverlay');
-const countdownNumber = document.getElementById('countdownNumber');
+const countdownNumber  = document.getElementById('countdownNumber');
 const countdownTimeInput = document.getElementById('countdownTime');
-const downloadContainer = document.getElementById('downloadContainer');
-const downloadLink = document.getElementById('downloadLink');
+const downloadContainer  = document.getElementById('downloadContainer');
+const downloadLink       = document.getElementById('downloadLink');
+const settingsDrawer   = document.getElementById('settingsDrawer');
+const btnOpenSettings  = document.getElementById('btnOpenSettings');
+const btnBottomSettings= document.getElementById('btnBottomSettings');
+const btnCloseSettings = document.getElementById('btnCloseSettings');
+const btnRecord        = document.getElementById('btnRecord');
+const btnFlip          = document.getElementById('btnFlip');
+const btnRotLeft       = document.getElementById('btnRotLeft');
+const btnRotRight      = document.getElementById('btnRotRight');
+const btnPortrait      = document.getElementById('btnPortrait');
 
-// ====== 相機與錄影全域變數 ======
-let mediaStream = null;
-let mediaRecorder = null;
-let recordedChunks = [];
+/* ===== 相機 ===== */
+let mediaStream  = null;
+let facingMode   = 'user'; // 'user' = 前鏡, 'environment' = 後鏡
 
-// 初始化相機
-async function initCamera() {
+async function initCamera(facing = 'user') {
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); }
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: true
         });
         video.srcObject = mediaStream;
     } catch (err) {
-        alert("無法啟動相機。請確認已授權權限並在 HTTPS 環境下運行。\n錯誤訊息: " + err);
+        alert('無法啟動相機，請確認已授權權限並在 HTTPS 環境下運行。\n' + err);
     }
 }
-initCamera();
+initCamera(facingMode);
 
-// ====== 提示詞參數設置 ======
-let scrollSpeed = parseFloat(scrollSpeedInput.value); // 速度值
-let scrollY = 0; // 當前滾動的 Y 軸位置
-let animationFrameId = null;
-let isScrolling = false;
+btnFlip.addEventListener('click', () => {
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
+    initCamera(facingMode);
+});
 
-// 更新文字內容
+/* ===== 設定抽屜 ===== */
+function openSettings()  { settingsDrawer.classList.add('open'); }
+function closeSettings() { settingsDrawer.classList.remove('open'); }
+
+btnOpenSettings.addEventListener('click',   openSettings);
+btnBottomSettings.addEventListener('click', openSettings);
+btnCloseSettings.addEventListener('click',  closeSettings);
+
+// 點抽屜以外區域關閉
+window.addEventListener('pointerdown', (e) => {
+    if (settingsDrawer.classList.contains('open') &&
+        !settingsDrawer.contains(e.target) &&
+        e.target !== btnOpenSettings &&
+        e.target !== btnBottomSettings) {
+        closeSettings();
+    }
+});
+
+/* ===== 設定控制 ===== */
 textInput.addEventListener('input', () => {
-    scrollingText.innerText = textInput.value;
-    calculateEstimatedTime();
+    scrollingText.innerText = textInput.value || '請先點右上角 ⚙ 輸入提示詞…';
+    calcEstimate();
 });
 
-// 調整文字大小
 fontSizeInput.addEventListener('input', (e) => {
-    const size = e.target.value;
-    fontSizeDisplay.innerText = size;
-    scrollingText.style.fontSize = size + 'px';
-    calculateEstimatedTime();
+    fontSizeDisplay.innerText = e.target.value;
+    scrollingText.style.fontSize = e.target.value + 'px';
+    calcEstimate();
 });
 
-// 調整文字顏色
 fontColorInput.addEventListener('input', (e) => {
     scrollingText.style.color = e.target.value;
 });
 
-// 調整語速
 scrollSpeedInput.addEventListener('input', (e) => {
     speedDisplay.innerText = e.target.value;
-    scrollSpeed = parseFloat(e.target.value);
-    calculateEstimatedTime();
+    calcEstimate();
 });
 
-// 旋轉控制 (左旋-90, 右旋90, Portrait 0)
+/* ===== 預計時長計算 ===== */
+function calcEstimate() {
+    if (!textInput.value.trim()) { estimatedTime.innerText = '0.0 秒'; return; }
+    const containerH  = prompterContainer.clientHeight;
+    const textH       = scrollingText.scrollHeight;
+    const totalDist   = containerH + textH;
+    const pxPerFrame  = parseFloat(scrollSpeedInput.value) / 20;
+    const pxPerSec    = pxPerFrame * 60;
+    estimatedTime.innerText = (totalDist / pxPerSec).toFixed(1) + ' 秒';
+}
+new ResizeObserver(calcEstimate).observe(prompterContainer);
+
+/* ===== 文字旋轉 ===== */
 let currentRotation = 0;
 function applyRotation() {
     textWrapper.style.transform = `rotate(${currentRotation}deg)`;
-    calculateEstimatedTime();
+    calcEstimate();
 }
+btnRotLeft.addEventListener('click',  () => { currentRotation = -90; applyRotation(); });
+btnRotRight.addEventListener('click', () => { currentRotation =  90; applyRotation(); });
+btnPortrait.addEventListener('click', () => { currentRotation =   0; applyRotation(); });
 
-btnRotLeft.addEventListener('click', () => { currentRotation = -90; applyRotation(); });
-btnRotRight.addEventListener('click', () => { currentRotation = 90; applyRotation(); });
-btnPortrait.addEventListener('click', () => { currentRotation = 0; applyRotation(); });
+/* ===== 提示詞滾動 ===== */
+let scrollY = 0;
+let isScrolling = false;
+let animId = null;
 
-// 計算預計時長
-function calculateEstimatedTime() {
-    // 如果文字為空
-    if (!textInput.value.trim()) {
-        estimatedTimeDisplay.innerText = "0.0 秒";
-        return;
-    }
-    
-    // 取得容器高度與文字高度
-    const containerHeight = prompterContainer.clientHeight;
-    // 為了獲取準確高度，我們短暫讓它渲染
-    const textHeight = scrollingText.scrollHeight; 
-    
-    // 總移動距離 = 容器高度(準備出場) + 文字高度(完全離開)
-    const totalDistance = containerHeight + textHeight;
-    
-    // 速度換算：scrollSpeed 滑桿值 (1~100)，假設每次 requestAnimationFrame (約60FPS) 移動的像素 = speed/20
-    const pixelsPerFrame = scrollSpeed / 20; 
-    const pixelsPerSecond = pixelsPerFrame * 60; // 每秒移動像素
-    
-    const estimatedSeconds = totalDistance / pixelsPerSecond;
-    estimatedTimeDisplay.innerText = estimatedSeconds.toFixed(1) + " 秒";
-}
-
-// 監聽容器大小改變以更新時長
-const resizeObserver = new ResizeObserver(() => calculateEstimatedTime());
-resizeObserver.observe(prompterContainer);
-
-// ====== 提示詞滾動邏輯 ======
 function startScrolling() {
-    const containerHeight = prompterContainer.clientHeight;
-    scrollY = containerHeight; // 從容器最底部開始
+    scrollY = prompterContainer.clientHeight;
     isScrolling = true;
-    
-    function scroll() {
+    function tick() {
         if (!isScrolling) return;
-        
-        const pixelsPerFrame = scrollSpeed / 20;
-        scrollY -= pixelsPerFrame; // 向上移動
+        scrollY -= parseFloat(scrollSpeedInput.value) / 20;
         scrollingText.style.top = scrollY + 'px';
-
-        const textHeight = scrollingText.scrollHeight;
-        // 如果文字還沒完全離開頂部，繼續滾動
-        if (scrollY > -textHeight) {
-            animationFrameId = requestAnimationFrame(scroll);
+        if (scrollY > -scrollingText.scrollHeight) {
+            animId = requestAnimationFrame(tick);
         } else {
-            // 滾動結束，自動停止錄影
             stopRecording();
         }
     }
-    scroll();
+    tick();
 }
 
 function stopScrolling() {
     isScrolling = false;
-    cancelAnimationFrame(animationFrameId);
-    scrollingText.style.top = '100%'; // 重置位置
+    cancelAnimationFrame(animId);
+    scrollingText.style.top = '100%';
 }
 
-// ====== 錄影與倒數計時邏輯 ======
-btnRecord.addEventListener('click', () => {
-    if (!mediaStream) return alert("相機未就緒");
-    
-    let countdown = parseInt(countdownTimeInput.value) || 3;
-    countdownOverlay.style.display = 'flex';
-    countdownNumber.innerText = countdown;
+/* ===== 錄影 ===== */
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
 
-    const timer = setInterval(() => {
-        countdown--;
-        if (countdown > 0) {
-            countdownNumber.innerText = countdown;
+btnRecord.addEventListener('click', () => {
+    if (isRecording) { stopRecording(); return; }
+    startCountdown();
+});
+
+function startCountdown() {
+    let n = parseInt(countdownTimeInput.value) || 0;
+    if (n <= 0) { startRecording(); return; }
+    countdownNumber.innerText = n;
+    countdownOverlay.classList.add('active');
+    const t = setInterval(() => {
+        n--;
+        if (n > 0) {
+            countdownNumber.innerText = n;
         } else {
-            clearInterval(timer);
-            countdownOverlay.style.display = 'none';
+            clearInterval(t);
+            countdownOverlay.classList.remove('active');
             startRecording();
         }
     }, 1000);
-});
-
-btnStop.addEventListener('click', () => {
-    stopRecording();
-});
+}
 
 function startRecording() {
+    if (!mediaStream) { alert('相機未就緒'); return; }
     recordedChunks = [];
-    
-    // iOS Safari 支援 video/mp4 或預設 (使用空字串讓瀏覽器自動選擇支援格式)
     try {
-        mediaRecorder = new MediaRecorder(mediaStream);
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+            ? 'video/webm;codecs=vp9'
+            : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+        mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
     } catch (e) {
-        alert('此設備不支援 MediaRecorder API');
-        return;
+        alert('此設備不支援錄影功能'); return;
     }
 
-    mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-            recordedChunks.push(event.data);
-        }
-    };
-
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-        const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
+        downloadLink.href = URL.createObjectURL(blob);
         downloadContainer.style.display = 'block';
+        openSettings();
     };
 
     mediaRecorder.start();
-    
-    // 切換按鈕狀態
-    btnRecord.style.display = 'none';
-    btnStop.style.display = 'block';
+    isRecording = true;
+    btnRecord.classList.add('recording');
     downloadContainer.style.display = 'none';
-
-    // 開始滾動提示詞
+    closeSettings();
     startScrolling();
 }
 
 function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-    }
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    isRecording = false;
+    btnRecord.classList.remove('recording');
     stopScrolling();
-    btnRecord.style.display = 'block';
-    btnStop.style.display = 'none';
 }
 
-// ====== 拖拽 (Drag) 與 縮放 (Resize) 邏輯 (支援觸控與滑鼠) ======
-const prompterWindow = document.getElementById('prompterWindow');
-const dragHandle = document.getElementById('dragHandle');
-const resizeHandle = document.getElementById('resizeHandle');
-
-// 提取事件座標 (相容 Touch 與 Mouse)
-function getEventClient(e) {
-    if (e.touches && e.touches.length > 0) return e.touches[0];
-    return e;
+/* ===== 拖拽浮窗（Touch + Mouse） ===== */
+function getClient(e) {
+    return e.touches ? e.touches[0] : e;
 }
 
-// --- 拖拽邏輯 ---
-let isDragging = false;
-let dragStartX, dragStartY;
-let initialLeft, initialTop;
+function clampWindow() {
+    const W = window.innerWidth,  H = window.innerHeight;
+    const pw = prompterWindow;    const bh = 100; // bottomBar 高
+    const rect = pw.getBoundingClientRect();
+    let l = rect.left, t = rect.top;
+    // 不超出邊界
+    l = Math.max(0, Math.min(l, W - rect.width));
+    t = Math.max(0, Math.min(t, H - rect.height - bh));
+    pw.style.left      = l + 'px';
+    pw.style.top       = t + 'px';
+    pw.style.transform = 'none';
+}
 
-dragHandle.addEventListener('mousedown', dragStart);
-dragHandle.addEventListener('touchstart', dragStart, { passive: false });
-
-function dragStart(e) {
+// 拖拽
+let drag = false, dragSX, dragSY, dragL0, dragT0;
+dragHandle.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    isDragging = true;
-    const client = getEventClient(e);
-    dragStartX = client.clientX;
-    dragStartY = client.clientY;
-    initialLeft = prompterWindow.offsetLeft;
-    initialTop = prompterWindow.offsetTop;
-
-    document.addEventListener('mousemove', dragging);
-    document.addEventListener('touchmove', dragging, { passive: false });
-    document.addEventListener('mouseup', dragEnd);
-    document.addEventListener('touchend', dragEnd);
-}
-
-function dragging(e) {
-    if (!isDragging) return;
+    dragHandle.setPointerCapture(e.pointerId);
+    const rect = prompterWindow.getBoundingClientRect();
+    drag  = true;
+    dragSX = e.clientX; dragSY = e.clientY;
+    dragL0 = rect.left; dragT0 = rect.top;
+    prompterWindow.style.transform = 'none';
+});
+dragHandle.addEventListener('pointermove', (e) => {
+    if (!drag) return;
     e.preventDefault();
-    const client = getEventClient(e);
-    const dx = client.clientX - dragStartX;
-    const dy = client.clientY - dragStartY;
-    
-    prompterWindow.style.left = (initialLeft + dx) + 'px';
-    prompterWindow.style.top = (initialTop + dy) + 'px';
-}
+    const W = window.innerWidth, H = window.innerHeight;
+    const pw = prompterWindow;
+    const bh = 100;
+    let newL = dragL0 + (e.clientX - dragSX);
+    let newT = dragT0 + (e.clientY - dragSY);
+    newL = Math.max(0, Math.min(newL, W - pw.offsetWidth));
+    newT = Math.max(0, Math.min(newT, H - pw.offsetHeight - bh));
+    pw.style.left = newL + 'px';
+    pw.style.top  = newT + 'px';
+});
+dragHandle.addEventListener('pointerup',   () => { drag = false; });
+dragHandle.addEventListener('pointercancel', () => { drag = false; });
 
-function dragEnd() {
-    isDragging = false;
-    document.removeEventListener('mousemove', dragging);
-    document.removeEventListener('touchmove', dragging);
-    document.removeEventListener('mouseup', dragEnd);
-    document.removeEventListener('touchend', dragEnd);
-}
-
-// --- 縮放邏輯 ---
-let isResizing = false;
-let resizeStartX, resizeStartY;
-let initialWidth, initialHeight;
-
-resizeHandle.addEventListener('mousedown', resizeStart);
-resizeHandle.addEventListener('touchstart', resizeStart, { passive: false });
-
-function resizeStart(e) {
+// 縮放
+let resize = false, resSX, resSY, resW0, resH0;
+resizeHandle.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    isResizing = true;
-    const client = getEventClient(e);
-    resizeStartX = client.clientX;
-    resizeStartY = client.clientY;
-    initialWidth = prompterWindow.offsetWidth;
-    initialHeight = prompterWindow.offsetHeight;
-
-    document.addEventListener('mousemove', resizing);
-    document.addEventListener('touchmove', resizing, { passive: false });
-    document.addEventListener('mouseup', resizeEnd);
-    document.addEventListener('touchend', resizeEnd);
-}
-
-function resizing(e) {
-    if (!isResizing) return;
+    resizeHandle.setPointerCapture(e.pointerId);
+    resize = true;
+    resSX = e.clientX; resSY = e.clientY;
+    resW0 = prompterWindow.offsetWidth;
+    resH0 = prompterWindow.offsetHeight;
+    prompterWindow.style.transform = 'none';
+});
+resizeHandle.addEventListener('pointermove', (e) => {
+    if (!resize) return;
     e.preventDefault();
-    const client = getEventClient(e);
-    const dx = client.clientX - resizeStartX;
-    const dy = client.clientY - resizeStartY;
-    
-    // 設置最小寬高
-    const newWidth = Math.max(200, initialWidth + dx);
-    const newHeight = Math.max(200, initialHeight + dy);
+    const W  = window.innerWidth, H = window.innerHeight;
+    const bh = 100;
+    const rect = prompterWindow.getBoundingClientRect();
+    const maxW = W - rect.left;
+    const maxH = H - rect.top - bh;
+    const newW = Math.max(160, Math.min(resW0 + (e.clientX - resSX), maxW));
+    const newH = Math.max(120, Math.min(resH0 + (e.clientY - resSY), maxH));
+    prompterWindow.style.width  = newW + 'px';
+    prompterWindow.style.height = newH + 'px';
+    calcEstimate();
+});
+resizeHandle.addEventListener('pointerup',     () => { resize = false; });
+resizeHandle.addEventListener('pointercancel', () => { resize = false; });
 
-    prompterWindow.style.width = newWidth + 'px';
-    prompterWindow.style.height = newHeight + 'px';
-}
-
-function resizeEnd() {
-    isResizing = false;
-    document.removeEventListener('mousemove', resizing);
-    document.removeEventListener('touchmove', resizing);
-    document.removeEventListener('mouseup', resizeEnd);
-    document.removeEventListener('touchend', resizeEnd);
-}
+// 初始置中並確保不超出
+window.addEventListener('load', clampWindow);
+window.addEventListener('resize', clampWindow);
