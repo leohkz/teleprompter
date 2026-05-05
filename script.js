@@ -52,6 +52,8 @@ function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 /* ===== 狀態變量 ===== */
 let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
 let cameraReady = false;
+// 追蹤浮窗是否已被用戶手動拖移過（拖移後才用 left/top 定位）
+let windowMoved = false;
 
 /* ===== DOM ===== */
 const video             = document.getElementById('cameraPreview');
@@ -299,11 +301,10 @@ btnRecord.addEventListener('click', () => {
     }
 });
 
-/* 先確保相機就緒，再開始倒數 */
 async function startWithCamera() {
     if (!cameraReady) {
         await initCamera(facingMode);
-        if (!cameraReady) return; // 授權失敗則停止
+        if (!cameraReady) return;
     }
     startCountdown();
 }
@@ -345,9 +346,13 @@ function stopRecording() {
 let drag=false, dragSX, dragSY, dragL0, dragT0;
 dragHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); dragHandle.setPointerCapture(e.pointerId);
-    const r=prompterWindow.getBoundingClientRect();
+    // 拖移前先把 CSS transform 轉成 left/top 絕對座標
+    const r = prompterWindow.getBoundingClientRect();
+    prompterWindow.style.left = r.left + 'px';
+    prompterWindow.style.top  = r.top  + 'px';
+    prompterWindow.style.transform = 'none';
+    windowMoved = true;
     drag=true; dragSX=e.clientX; dragSY=e.clientY; dragL0=r.left; dragT0=r.top;
-    prompterWindow.style.transform='none';
 });
 dragHandle.addEventListener('pointermove', e => {
     if(!drag) return; e.preventDefault();
@@ -363,9 +368,16 @@ dragHandle.addEventListener('pointercancel', ()=>drag=false);
 let resize=false, resSX, resSY, resW0, resH0;
 resizeHandle.addEventListener('pointerdown', e => {
     e.preventDefault(); resizeHandle.setPointerCapture(e.pointerId);
+    // 縮放前同樣固定 left/top
+    if (!windowMoved) {
+        const r = prompterWindow.getBoundingClientRect();
+        prompterWindow.style.left = r.left + 'px';
+        prompterWindow.style.top  = r.top  + 'px';
+        prompterWindow.style.transform = 'none';
+        windowMoved = true;
+    }
     resize=true; resSX=e.clientX; resSY=e.clientY;
     resW0=prompterWindow.offsetWidth; resH0=prompterWindow.offsetHeight;
-    prompterWindow.style.transform='none';
 });
 resizeHandle.addEventListener('pointermove', e => {
     if(!resize) return; e.preventDefault();
@@ -378,15 +390,14 @@ resizeHandle.addEventListener('pointermove', e => {
 resizeHandle.addEventListener('pointerup',     ()=>resize=false);
 resizeHandle.addEventListener('pointercancel', ()=>resize=false);
 
-/* ===== Clamp ===== */
+/* ===== Clamp（只在用戶已拖移過的情況下才 clamp） ===== */
 function clampWindow() {
+    if (!windowMoved) return; // 未拖移過則保持 CSS 原始 transform 置中，不干預
     const BH=document.getElementById('bottomBar').offsetHeight;
     const pw=prompterWindow; const r=pw.getBoundingClientRect();
     pw.style.left=Math.max(0,Math.min(r.left,window.innerWidth-pw.offsetWidth))+'px';
     pw.style.top =Math.max(0,Math.min(r.top, window.innerHeight-pw.offsetHeight-BH))+'px';
-    pw.style.transform='none';
 }
-window.addEventListener('load',   clampWindow);
 window.addEventListener('resize', ()=>{ clampWindow(); resetPrompter(); });
 new ResizeObserver(()=>calcEstimate()).observe(prompterContainer);
 
@@ -401,4 +412,4 @@ video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-// 不再自動啟動相機，改由用戶點擊錄影鍵時才請求授權
+// 不自動啟動相機，等用戶點擊錄影鍵才請求授權
