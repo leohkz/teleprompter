@@ -12,6 +12,7 @@ svg.lucide {
 
 /* z-index 層次表:
    1   = 鏡頭 video
+   2   = 相機提示
    50  = 提示詞浮窗
    100 = 底部工具列
    200 = 設定抽屜
@@ -24,6 +25,15 @@ svg.lucide {
     transform: scaleX(-1); transition: transform 0.2s;
 }
 #cameraPreview.mirror-off { transform: scaleX(1); }
+
+/* 相機未啟動提示 */
+#cameraHint {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2; pointer-events: none;
+    color: rgba(255,255,255,0.35); font-size: 15px; font-weight: 500;
+    letter-spacing: 0.5px;
+}
 
 #countdownOverlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6);

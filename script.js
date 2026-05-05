@@ -11,6 +11,7 @@ const I18N = {
         noCamera:'\u76f8\u6a5f\u672a\u5c31\u7dd2', noRecord:'\u6b64\u8a2d\u5099\u4e0d\u652f\u63f4\u9304\u5f71\u529f\u80fd',
         prompterHint:'\u9ede\u53f3\u4e0a\u89d2 \u2699 \u8f38\u5165\u63d0\u793a\u8a5e',
         rerecordConfirm:'\u4e0a\u4e00\u6b21\u9304\u88fd\u5c07\u88ab\u522a\u9664\uff0c\u78ba\u5b9a\u8981\u91cd\u65b0\u9304\u88fd\uff1f',
+        tapToStart:'\u9ede\u64ca\u9304\u5f71\u9215\u555f\u52d5\u76f8\u6a5f',
     },
     'zh-CN': {
         settings:'\u8bbe  \u7f6e', language:'\u8bed\u8a00',
@@ -23,6 +24,7 @@ const I18N = {
         noCamera:'\u6444\u50cf\u5934\u672a\u5c31\u7eea', noRecord:'\u6b64\u8bbe\u5907\u4e0d\u652f\u6301\u5f55\u5236\u529f\u80fd',
         prompterHint:'\u70b9\u53f3\u4e0a\u89d2 \u2699 \u8f93\u5165\u63d0\u793a\u8bcd',
         rerecordConfirm:'\u4e0a\u6b21\u5f55\u5236\u5c06\u88ab\u5220\u9664\uff0c\u786e\u5b9a\u8981\u91cd\u65b0\u5f55\u5236\uff1f',
+        tapToStart:'\u70b9\u51fb\u5f55\u5f71\u952e\u542f\u52a8\u6444\u50cf\u5934',
     },
     'en': {
         settings:'SETTINGS', language:'Language',
@@ -35,6 +37,7 @@ const I18N = {
         noCamera:'Camera not ready', noRecord:'Recording not supported on this device',
         prompterHint:'Tap \u2699 to enter your script',
         rerecordConfirm:'The previous recording will be deleted. Start a new recording?',
+        tapToStart:'Tap record button to start camera',
     }
 };
 function detectLang() {
@@ -46,8 +49,9 @@ function detectLang() {
 let currentLang = detectLang();
 function t(k) { return (I18N[currentLang]||I18N['en'])[k]||k; }
 
-/* ===== 狀態變量（必須在 loadSettings 之前宣告） ===== */
+/* ===== 狀態變量 ===== */
 let mediaStream = null, facingMode = 'user', isMirror = true, rot = 0;
+let cameraReady = false;
 
 /* ===== DOM ===== */
 const video             = document.getElementById('cameraPreview');
@@ -81,6 +85,7 @@ const btnRotRight       = document.getElementById('btnRotRight');
 const btnPortrait       = document.getElementById('btnPortrait');
 const wpmDown           = document.getElementById('wpmDown');
 const wpmUp             = document.getElementById('wpmUp');
+const cameraHint        = document.getElementById('cameraHint');
 
 /* ===== localStorage ===== */
 const STORAGE_KEY = 'teleprompter_v1';
@@ -122,6 +127,7 @@ function applyI18n() {
     document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-ph')));
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     if (!textInput.value.trim()) scrollingText.innerText = t('prompterHint');
+    if (cameraHint && !cameraReady) cameraHint.innerText = t('tapToStart');
     calcEstimate();
 }
 document.querySelectorAll('.seg-btn').forEach(btn =>
@@ -141,11 +147,16 @@ async function initCamera(facing) {
             video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}, audio:true
         });
         video.srcObject = mediaStream;
-    } catch(err) { alert(t('camErr')+'\n'+err); }
+        cameraReady = true;
+        if (cameraHint) cameraHint.style.display = 'none';
+    } catch(err) {
+        cameraReady = false;
+        alert(t('camErr')+'\n'+err);
+    }
 }
 btnFlip.addEventListener('click', () => {
     facingMode = facingMode==='user'?'environment':'user';
-    initCamera(facingMode);
+    if (cameraReady) initCamera(facingMode);
     saveSettings();
 });
 btnMirror.addEventListener('click', () => {
@@ -281,12 +292,21 @@ btnRecord.addEventListener('click', () => {
                 downloadLink.href = '#';
             }
             resetPrompter();
-            startCountdown();
+            startWithCamera();
         }
     } else {
-        startCountdown();
+        startWithCamera();
     }
 });
+
+/* 先確保相機就緒，再開始倒數 */
+async function startWithCamera() {
+    if (!cameraReady) {
+        await initCamera(facingMode);
+        if (!cameraReady) return; // 授權失敗則停止
+    }
+    startCountdown();
+}
 
 function startCountdown() {
     let n = +countdownSlider.value || 0;
@@ -381,4 +401,4 @@ video.classList.toggle('mirror-off', !isMirror);
 btnMirror.classList.toggle('mirror-active', isMirror);
 if (rot !== 0) scrollingText.style.transform = `translateY(0) rotate(${rot}deg)`;
 resetPrompter();
-initCamera(facingMode);
+// 不再自動啟動相機，改由用戶點擊錄影鍵時才請求授權
